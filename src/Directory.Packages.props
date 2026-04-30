@@ -18,7 +18,7 @@
     <PackageVersion Include="Ical.Net" Version="4.3.1" />
     <PackageVersion Include="ImpromptuInterface" Version="7.0.1" />
     <PackageVersion Include="LazyCache" Version="2.4.0" />
-    <PackageVersion Include="Mailkit" Version="4.8.0" />
+    <PackageVersion Include="Mailkit" Version="4.16.0" />
     <PackageVersion Include="Microsoft.AspNetCore.SignalR.Client" Version="6.0.35" />
     <PackageVersion Include="Microsoft.Data.SqlClient" Version="2.1.7" />
     <PackageVersion Include="Microsoft.Extensions.Caching.Memory" Version="6.0.2" />
@@ -48,7 +48,7 @@
     <PackageVersion Include="Selenium.WebDriver.ChromeDriver" Version="134.0.6998.16500" />
     <PackageVersion Include="Sentry" Version="4.0.2" />
     <PackageVersion Include="SharpZipLib" Version="1.4.2" />
-    <PackageVersion Include="SixLabors.ImageSharp" Version="3.1.7" />
+    <PackageVersion Include="SixLabors.ImageSharp" Version="3.1.11" />
     <PackageVersion Include="StyleCop.Analyzers" Version="1.1.118" />
     <PackageVersion Include="Swashbuckle.AspNetCore.Annotations" Version="6.6.2" />
     <PackageVersion Include="Swashbuckle.AspNetCore.SwaggerGen" Version="6.6.2" />
@@ -64,7 +64,7 @@
     <PackageVersion Include="System.Runtime.Loader" Version="4.3.0" />
     <PackageVersion Include="System.Security.Principal.Windows" Version="5.0.0" />
     <PackageVersion Include="System.ServiceProcess.ServiceController" Version="6.0.1" />
-    <PackageVersion Include="System.Text.Encoding.CodePages" Version="6.0.0" />
+    <PackageVersion Include="System.Text.Encoding.CodePages" Version="8.0.0" />
     <PackageVersion Include="System.Text.Json" Version="6.0.10" />
     <PackageVersion Include="System.ValueTuple" Version="4.6.1" />
     <PackageVersion Include="TagLibSharp-Lidarr" Version="2.2.0.19" />

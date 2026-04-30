@@ -13,7 +13,7 @@ RUN corepack enable \
     && yarn build --env production
 
 
-FROM mcr.microsoft.com/dotnet/sdk:9.0-bookworm-slim AS backend-build
+FROM mcr.microsoft.com/dotnet/sdk:10.0-noble AS backend-build
 
 ARG TARGETARCH
 
