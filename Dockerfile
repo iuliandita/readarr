@@ -11,7 +11,7 @@ RUN yarn install --frozen-lockfile --network-timeout 120000 \
     && yarn build --env production
 
 
-FROM mcr.microsoft.com/dotnet/sdk:6.0-bookworm-slim AS backend-build
+FROM mcr.microsoft.com/dotnet/sdk:10.0-noble AS backend-build
 
 ARG TARGETARCH
 
@@ -28,7 +28,7 @@ RUN case "${TARGETARCH}" in \
     esac \
     && dotnet publish src/NzbDrone.Console/Readarr.Console.csproj \
         -c Release \
-        -f net6.0 \
+        -f net10.0 \
         -r "${runtime_id}" \
         --self-contained true \
         -p:EnableAnalyzers=false \
@@ -36,7 +36,7 @@ RUN case "${TARGETARCH}" in \
         -o /out/app \
     && dotnet publish src/NzbDrone.Mono/Readarr.Mono.csproj \
         -c Release \
-        -f net6.0 \
+        -f net10.0 \
         -r "${runtime_id}" \
         --self-contained true \
         -p:EnableAnalyzers=false \
