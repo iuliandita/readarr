@@ -1,3 +1,6 @@
+> [!NOTE]
+> This repository is a maintenance fork for people who still depend on Readarr while the ecosystem waits for a real replacement to emerge. The intent is to keep existing installs usable and safer through security updates, dependency/runtime repair, packaging fixes, and selected breaking bug fixes; it is not a revival of Readarr as a feature-driven project, and new end-user features are out of scope by default. The container image built here keeps a LinuxServer-compatible runtime layout for existing homelab deployments.
+
 # Announcement: Retirement of Readarr
 
 We would like to announce that the [Readarr project](<https://github.com/Readarr/Readarr>) has been retired. This difficult decision was made due to a combination of factors: the project's metadata has become unusable, we no longer have the time to remake or repair it, and the community effort to transition to using Open Library as the source has stalled without much progress.
@@ -17,9 +20,6 @@ Thank you for being part of the Readarr journey. For any inquiries or assistance
 
 Sincerely,  
 The Servarr Team
-
-> [!NOTE]
-> This repository is a maintenance fork for people who still depend on Readarr while the ecosystem waits for a real replacement to emerge. The intent is to keep existing installs usable and safer through security updates, dependency/runtime repair, packaging fixes, and selected breaking bug fixes; it is not a revival of Readarr as a feature-driven project, and new end-user features are out of scope by default. The container image built here keeps a LinuxServer-compatible runtime layout for existing homelab deployments.
 
 # Readarr
 
