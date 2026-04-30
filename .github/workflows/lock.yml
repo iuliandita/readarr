@@ -18,4 +18,4 @@ jobs:
           add-issue-labels: ''
           issue-comment: ''
           issue-lock-reason: 'resolved'
-          process-only: ''
+          process-only: 'issues, prs'
