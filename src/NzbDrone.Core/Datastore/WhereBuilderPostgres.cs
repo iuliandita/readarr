@@ -296,15 +296,28 @@ namespace NzbDrone.Core.Datastore
             }
             else
             {
+                if (body.Method.DeclaringType == typeof(MemoryExtensions) && (body.Arguments.Count == 2 || body.Arguments.Count == 3))
+                {
+                    list = body.Arguments[0];
+
+                    if (list is MethodCallExpression spanConversion && spanConversion.Arguments.Count == 1)
+                    {
+                        list = spanConversion.Arguments[0];
+                    }
+
+                    item = body.Arguments[1];
+                }
                 // Static method
                 // Must be Enumerable.Contains(source, item)
-                if (body.Method.DeclaringType != typeof(Enumerable) || body.Arguments.Count != 2)
+                else if (body.Method.DeclaringType != typeof(Enumerable) || body.Arguments.Count != 2)
                 {
                     throw new NotSupportedException("Unexpected form of Enumerable.Contains");
                 }
-
-                list = body.Arguments[0];
-                item = body.Arguments[1];
+                else
+                {
+                    list = body.Arguments[0];
+                    item = body.Arguments[1];
+                }
             }
 
             _sb.Append('(');

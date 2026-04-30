@@ -58,8 +58,6 @@ namespace NzbDrone.Common.Http
             _rateLimitService = rateLimitService;
             _httpDispatcher = httpDispatcher;
             _logger = logger;
-
-            ServicePointManager.DefaultConnectionLimit = 12;
             _cookieContainerCache = cacheManager.GetCache<CookieContainer>(typeof(HttpClient));
         }
 

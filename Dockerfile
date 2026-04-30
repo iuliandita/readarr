@@ -30,7 +30,7 @@ RUN case "${TARGETARCH}" in \
     esac \
     && dotnet publish src/NzbDrone.Console/Readarr.Console.csproj \
         -c Release \
-        -f net6.0 \
+        -f net10.0 \
         -r "${runtime_id}" \
         --self-contained true \
         -p:EnableAnalyzers=false \
@@ -38,7 +38,7 @@ RUN case "${TARGETARCH}" in \
         -o /out/app \
     && dotnet publish src/NzbDrone.Mono/Readarr.Mono.csproj \
         -c Release \
-        -f net6.0 \
+        -f net10.0 \
         -r "${runtime_id}" \
         --self-contained true \
         -p:EnableAnalyzers=false \
