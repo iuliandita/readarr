@@ -1,15 +1,13 @@
 # syntax=docker/dockerfile:1.7
 
-FROM node:20-bookworm-slim AS frontend-build
+FROM node:25-trixie-slim AS frontend-build
 
 WORKDIR /src
 
 COPY package.json yarn.lock .yarnrc tsconfig.json ./
 COPY frontend ./frontend
 
-RUN corepack enable \
-    && corepack prepare yarn@1.22.19 --activate \
-    && yarn install --frozen-lockfile --network-timeout 120000 \
+RUN yarn install --frozen-lockfile --network-timeout 120000 \
     && yarn build --env production
 
 
