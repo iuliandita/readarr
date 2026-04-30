@@ -49,7 +49,7 @@ RUN case "${TARGETARCH}" in \
     && cp -a /out/mono/libMonoPosixHelper* /out/app/
 
 
-FROM ghcr.io/linuxserver/baseimage-alpine:3.21 AS runtime-alpine
+FROM ghcr.io/linuxserver/baseimage-alpine:3.23 AS runtime-alpine
 
 ARG BUILD_DATE
 ARG VERSION=dev
