@@ -18,6 +18,9 @@ Thank you for being part of the Readarr journey. For any inquiries or assistance
 Sincerely,  
 The Servarr Team
 
+> [!NOTE]
+> This repository is a maintenance fork for people who still depend on Readarr while the ecosystem waits for a real replacement to emerge. The intent is to keep existing installs usable and safer through security updates, dependency/runtime repair, packaging fixes, and selected breaking bug fixes; it is not a revival of Readarr as a feature-driven project, and new end-user features are out of scope by default.
+
 # Readarr
 
 [![Build Status](https://dev.azure.com/Readarr/Readarr/_apis/build/status/Readarr.Readarr?branchName=develop)](https://dev.azure.com/Readarr/Readarr/_build/latest?definitionId=1&branchName=develop)
