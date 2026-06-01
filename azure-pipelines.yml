@@ -16,11 +16,11 @@ variables:
   sentryOrg: 'servarr'
   sentryUrl: 'https://sentry.servarr.com'
   dotnetVersion: '10.0.203'
-  nodeVersion: '20.X'
-  innoVersion: '6.2.0'
+  nodeVersion: '24.X'
+  innoVersion: '6.7.1'
   windowsImage: 'windows-2022'
-  linuxImage: 'ubuntu-22.04'
-  macImage: 'macOS-13'
+  linuxImage: 'ubuntu-24.04'
+  macImage: 'macOS-15'
 
 trigger:
   branches:

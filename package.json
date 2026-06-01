@@ -33,7 +33,7 @@
     "@microsoft/signalr": "6.0.25",
     "@sentry/browser": "7.119.1",
     "@sentry/integrations": "7.119.1",
-    "@types/node": "20.16.11",
+    "@types/node": "24.12.2",
     "@types/react": "18.2.79",
     "@types/react-dom": "18.2.25",
     "classnames": "2.5.1",
@@ -51,7 +51,7 @@
     "mousetrap": "1.6.5",
     "normalize.css": "8.0.1",
     "prop-types": "15.8.1",
-    "qs": "6.13.0",
+    "qs": "6.15.1",
     "react": "17.0.2",
     "react-addons-shallow-compare": "15.6.3",
     "react-async-script": "1.2.0",
@@ -142,7 +142,11 @@
     "worker-loader": "3.0.8"
   },
   "volta": {
-    "node": "20.11.1",
-    "yarn": "1.22.19"
+    "node": "24.15.0",
+    "yarn": "1.22.22"
+  },
+  "resolutions": {
+    "@babel/runtime": "7.29.2",
+    "immutable": "4.3.8"
   }
 }
