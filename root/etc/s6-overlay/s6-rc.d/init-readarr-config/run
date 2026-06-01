@@ -3,6 +3,13 @@
 
 mkdir -p /run/readarr-temp
 
+# Make the temp dir writable under any UID even when CAP_CHOWN is unavailable.
+# Hardened/non-root runtimes (e.g. k8s dropping all caps) can't run the lsiown
+# below, leaving this root-owned and unwritable; ASP.NET DataProtection then
+# fails to write its scratch key and login returns 401. Sticky bit (same as
+# /tmp) keeps it shared-safe across users.
+chmod 1777 /run/readarr-temp
+
 if [[ -z ${LSIO_NON_ROOT_USER} ]]; then
     lsiown -R abc:abc \
         /config \
