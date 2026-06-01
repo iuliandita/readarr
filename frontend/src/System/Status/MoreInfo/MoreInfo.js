@@ -17,7 +17,7 @@ class MoreInfo extends Component {
         <DescriptionList>
           <DescriptionListItemTitle>Home page</DescriptionListItemTitle>
           <DescriptionListItemDescription>
-            <Link to="https://readarr.com/">readarr.com</Link>
+            <Link to="https://github.com/iuliandita/readarr">github.com/iuliandita/readarr</Link>
           </DescriptionListItemDescription>
 
           <DescriptionListItemTitle>Wiki</DescriptionListItemTitle>
@@ -37,12 +37,12 @@ class MoreInfo extends Component {
 
           <DescriptionListItemTitle>Source</DescriptionListItemTitle>
           <DescriptionListItemDescription>
-            <Link to="https://github.com/readarr/Readarr/">github.com/Readarr/Readarr</Link>
+            <Link to="https://github.com/iuliandita/readarr">github.com/iuliandita/readarr</Link>
           </DescriptionListItemDescription>
 
           <DescriptionListItemTitle>Feature Requests</DescriptionListItemTitle>
           <DescriptionListItemDescription>
-            <Link to="https://github.com/readarr/Readarr/issues">github.com/Readarr/Readarr/issues</Link>
+            <Link to="https://github.com/iuliandita/readarr/issues">github.com/iuliandita/readarr/issues</Link>
           </DescriptionListItemDescription>
 
         </DescriptionList>
