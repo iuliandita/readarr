@@ -29,6 +29,9 @@ namespace NzbDrone.Integration.Test
 
         protected override string ApiKey => _runner.ApiKey;
 
+        // Fixtures that need Forms authentication enforced (e.g. login redirect behaviour) override this.
+        protected virtual bool EnableAuth => false;
+
         protected override void StartTestTarget()
         {
             Port = Interlocked.Increment(ref StaticPort);
@@ -43,7 +46,7 @@ namespace NzbDrone.Integration.Test
             _runner = new NzbDroneRunner(LogManager.GetCurrentClassLogger(), PostgresOptions, Port);
             _runner.Kill();
 
-            _runner.Start();
+            _runner.Start(EnableAuth);
         }
 
         protected override void InitializeTestTarget()

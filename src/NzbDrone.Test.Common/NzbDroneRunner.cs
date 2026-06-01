@@ -192,7 +192,11 @@ namespace NzbDrone.Test.Common
                              new XElement(nameof(ConfigFileProvider.LogLevel), "trace"),
                              new XElement(nameof(ConfigFileProvider.AnalyticsEnabled), false),
                              new XElement(nameof(ConfigFileProvider.AuthenticationMethod), enableAuth ? "Forms" : "None"),
-                             new XElement(nameof(ConfigFileProvider.AuthenticationRequired), "DisabledForLocalAddresses"),
+
+                             // When auth is enabled for a test we want it enforced for every request, including
+                             // loopback. DisabledForLocalAddresses would let the UiAuthorizationHandler bypass the
+                             // challenge for localhost and hide the login redirect behaviour under test.
+                             new XElement(nameof(ConfigFileProvider.AuthenticationRequired), enableAuth ? "Enabled" : "DisabledForLocalAddresses"),
                              new XElement(nameof(ConfigFileProvider.Port), Port)));
 
             var data = xDoc.ToString();

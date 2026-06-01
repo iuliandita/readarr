@@ -1,11 +1,14 @@
 using System;
+using System.Net;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using Diacritical;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.Extensions.DependencyInjection;
 using NzbDrone.Core.Authentication;
 using NzbDrone.Core.Configuration;
+using Readarr.Http.Extensions;
 
 namespace Readarr.Http.Authentication
 {
@@ -49,6 +52,39 @@ namespace Readarr.Http.Authentication
                     options.ExpireTimeSpan = TimeSpan.FromDays(7);
                     options.SlidingExpiration = true;
                     options.ReturnUrlParameter = "returnUrl";
+
+                    // ASP.NET Core's default cookie challenge returns 401 (with a Location header) for
+                    // every unauthenticated request on modern runtimes, where .NET 6 issued a 302 redirect
+                    // to the login page for browser navigations. Browsers ignore Location on a 401 and render
+                    // the body, so the login form never loads. Restore the redirect for UI requests while
+                    // keeping API requests answered with a status code (401/403) instead of an HTML redirect.
+                    options.Events.OnRedirectToLogin = context =>
+                    {
+                        if (context.Request.IsApiRequest())
+                        {
+                            context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
+                        }
+                        else
+                        {
+                            context.Response.Redirect(context.RedirectUri);
+                        }
+
+                        return Task.CompletedTask;
+                    };
+
+                    options.Events.OnRedirectToAccessDenied = context =>
+                    {
+                        if (context.Request.IsApiRequest())
+                        {
+                            context.Response.StatusCode = (int)HttpStatusCode.Forbidden;
+                        }
+                        else
+                        {
+                            context.Response.Redirect(context.RedirectUri);
+                        }
+
+                        return Task.CompletedTask;
+                    };
                 });
 
             return services.AddAuthentication()
