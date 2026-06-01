@@ -1,6 +1,15 @@
 > [!NOTE]
 > This repository is a maintenance fork for people who still depend on Readarr while the ecosystem waits for a real replacement to emerge. The intent is to keep existing installs usable and safer through security updates, dependency/runtime repair, packaging fixes, and selected breaking bug fixes; it is not a revival of Readarr as a feature-driven project, and new end-user features are out of scope by default. The container image built here keeps a LinuxServer-compatible runtime layout for existing homelab deployments.
 
+## Metadata provider
+
+The original Readarr metadata server (`api.bookinfo.club`) is gone (the domain no longer resolves), which left a clean install unable to search, add, or refresh books. To keep the app usable out of the box, this fork defaults the metadata source to the hosted [rreading-glasses](<https://github.com/blampe/rreading-glasses>) public instance at `https://api.bookinfo.pro` (Goodreads-backed).
+
+- **Third party, unsupported, use at your own risk.** It is a free community service run by others; this fork is not affiliated with it and cannot support it. Expect rate limits and possible downtime, and review its terms before relying on it.
+- **Overridable.** Change it under **Settings -> Development -> Metadata Source**. For Hardcover-backed metadata, use `https://hardcover.bookinfo.pro`. Clear the field to fall back to the (now dead) built-in default.
+- **Self-hosting (recommended for reliability).** Run your own with the `blampe/rreading-glasses:latest` image and point the override at it, e.g. `http://rreading-glasses:8788`.
+- **Caveat:** rreading-glasses formats some titles differently from the old server. Existing libraries may need a re-import/refresh of works with long subtitles.
+
 # Announcement: Retirement of Readarr
 
 We would like to announce that the [Readarr project](<https://github.com/Readarr/Readarr>) has been retired. This difficult decision was made due to a combination of factors: the project's metadata has become unusable, we no longer have the time to remake or repair it, and the community effort to transition to using Open Library as the source has stalled without much progress.

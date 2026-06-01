@@ -35,6 +35,12 @@ namespace NzbDrone.Core.Test.Configuration
         }
 
         [Test]
+        public void metadata_source_should_default_to_public_bookinfo_instance()
+        {
+            Subject.MetadataSource.Should().Be("https://api.bookinfo.pro");
+        }
+
+        [Test]
         public void get_value_with_persist_should_store_default_value()
         {
             var salt = Subject.HmacSalt;

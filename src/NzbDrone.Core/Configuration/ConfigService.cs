@@ -264,7 +264,11 @@ namespace NzbDrone.Core.Configuration
 
         public string MetadataSource
         {
-            get { return GetValue("MetadataSource", ""); }
+            // Default to the hosted rreading-glasses public instance. The original
+            // api.bookinfo.club server is dead (NXDOMAIN), so an empty default left
+            // fresh installs unable to search/add/refresh. Overridable at
+            // Settings -> Development -> Metadata Source.
+            get { return GetValue("MetadataSource", "https://api.bookinfo.pro"); }
 
             set { SetValue("MetadataSource", value); }
         }
