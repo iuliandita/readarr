@@ -1,6 +1,8 @@
 > [!NOTE]
 > This repository is a maintenance fork for people who still depend on Readarr while the ecosystem waits for a real replacement to emerge. The intent is to keep existing installs usable and safer through security updates, dependency/runtime repair, packaging fixes, and selected breaking bug fixes; it is not a revival of Readarr as a feature-driven project, and new end-user features are out of scope by default. The container image built here keeps a LinuxServer-compatible runtime layout for existing homelab deployments.
 
+Two things worth knowing about how this fork runs. The container is built on the [LinuxServer.io base image](https://github.com/linuxserver/docker-baseimage-alpine) and keeps its s6/PUID-PGID layout, so it drops into existing homelab setups ([LinuxServer docs](https://docs.linuxserver.io/)). For metadata, the original Readarr server is gone, so this fork defaults to the community [rreading-glasses](https://github.com/blampe/rreading-glasses) server (see the "Metadata provider" notes below to read more or self-host).
+
 ## Metadata provider
 
 The original Readarr metadata server (`api.bookinfo.club`) is gone (the domain no longer resolves), which left a clean install unable to search, add, or refresh books. To keep the app usable out of the box, this fork defaults the metadata source to the hosted [rreading-glasses](<https://github.com/blampe/rreading-glasses>) public instance at `https://api.bookinfo.pro` (Goodreads-backed).
