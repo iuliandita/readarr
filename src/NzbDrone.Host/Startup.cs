@@ -82,6 +82,17 @@ namespace NzbDrone.Host
                     .AllowAnyHeader());
             });
 
+            // Readarr swaps in DryIoc, whose IServiceProviderIsService reports any
+            // instantiable concrete type as resolvable. Since .NET 7, MVC implicitly
+            // infers [FromServices] for complex action parameters that the container
+            // claims to provide, so request bodies (e.g. CommandResource) were bound
+            // from DI as empty objects instead of deserialized from JSON. Opt out to
+            // restore body binding.
+            services.Configure<Microsoft.AspNetCore.Mvc.ApiBehaviorOptions>(options =>
+            {
+                options.DisableImplicitFromServicesParameters = true;
+            });
+
             services
             .AddControllers(options =>
             {
