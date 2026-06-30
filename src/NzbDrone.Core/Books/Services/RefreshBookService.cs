@@ -114,6 +114,17 @@ namespace NzbDrone.Core.Books
             if (book == null)
             {
                 data = GetSkyhookData(local);
+
+                // The provider returned the author but neither the author payload nor a
+                // direct lookup has this book (partial remote data - e.g. an omnibus or
+                // collection the metadata mirror lacks). Leave Entity null so the caller's
+                // remote == null handling skips/deletes this single book instead of the
+                // whole author refresh dying on a NullReferenceException.
+                if (data == null)
+                {
+                    return result;
+                }
+
                 book = data.Books.Value.SingleOrDefault(x => x.ForeignBookId == local.ForeignBookId);
             }
 
