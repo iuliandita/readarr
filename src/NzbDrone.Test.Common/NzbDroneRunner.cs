@@ -185,6 +185,11 @@ namespace NzbDrone.Test.Common
             // Generate and set the api key so we don't have to poll the config file
             var apiKey = Guid.NewGuid().ToString().Replace("-", "");
 
+            // When auth is enabled for a test we want it enforced for every request, including
+            // loopback. DisabledForLocalAddresses would let the UiAuthorizationHandler bypass the
+            // challenge for localhost and hide the login redirect behaviour under test.
+            var authenticationRequired = enableAuth ? "Enabled" : "DisabledForLocalAddresses";
+
             var xDoc = new XDocument(
                 new XDeclaration("1.0", "utf-8", "yes"),
                 new XElement(ConfigFileProvider.CONFIG_ELEMENT_NAME,
@@ -192,11 +197,7 @@ namespace NzbDrone.Test.Common
                              new XElement(nameof(ConfigFileProvider.LogLevel), "trace"),
                              new XElement(nameof(ConfigFileProvider.AnalyticsEnabled), false),
                              new XElement(nameof(ConfigFileProvider.AuthenticationMethod), enableAuth ? "Forms" : "None"),
-
-                             // When auth is enabled for a test we want it enforced for every request, including
-                             // loopback. DisabledForLocalAddresses would let the UiAuthorizationHandler bypass the
-                             // challenge for localhost and hide the login redirect behaviour under test.
-                             new XElement(nameof(ConfigFileProvider.AuthenticationRequired), enableAuth ? "Enabled" : "DisabledForLocalAddresses"),
+                             new XElement(nameof(ConfigFileProvider.AuthenticationRequired), authenticationRequired),
                              new XElement(nameof(ConfigFileProvider.Port), Port)));
 
             var data = xDoc.ToString();

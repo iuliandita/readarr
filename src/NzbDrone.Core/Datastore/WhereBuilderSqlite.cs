@@ -307,10 +307,10 @@ namespace NzbDrone.Core.Datastore
 
                     item = body.Arguments[1];
                 }
-                // Static method
-                // Must be Enumerable.Contains(source, item)
                 else if (body.Method.DeclaringType != typeof(Enumerable) || body.Arguments.Count != 2)
                 {
+                    // Static method
+                    // Must be Enumerable.Contains(source, item)
                     throw new NotSupportedException("Unexpected form of Enumerable.Contains");
                 }
                 else
