@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 
 namespace NzbDrone.Common.Http
 {
@@ -13,7 +14,9 @@ namespace NzbDrone.Common.Http
             {
                 var retryAfter = response.Headers["Retry-After"].ToString();
 
-                if (int.TryParse(retryAfter, out var seconds))
+                // Retry-After is normally an integer number of seconds, but some
+                // servers (e.g. Discord) send fractional seconds like "0.5".
+                if (double.TryParse(retryAfter, NumberStyles.Float, CultureInfo.InvariantCulture, out var seconds))
                 {
                     RetryAfter = TimeSpan.FromSeconds(seconds);
                 }
