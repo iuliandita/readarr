@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.7
 
-FROM node:24-trixie-slim AS frontend-build
+FROM node:25-trixie-slim AS frontend-build
 
 WORKDIR /src
 
