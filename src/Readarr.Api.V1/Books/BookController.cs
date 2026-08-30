@@ -247,7 +247,14 @@ namespace Readarr.Api.V1.Books
                 return;
             }
 
-            BroadcastResourceChange(ModelAction.Updated, MapToResource(message.BookFile.Edition.Value.Book.Value, true));
+            var book = message.BookFile.Edition?.Value?.Book?.Value;
+
+            if (book == null)
+            {
+                return;
+            }
+
+            BroadcastResourceChange(ModelAction.Updated, MapToResource(book, true));
         }
     }
 }
