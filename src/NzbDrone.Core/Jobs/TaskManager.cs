@@ -116,7 +116,7 @@ namespace NzbDrone.Core.Jobs
 
                     new ScheduledTask
                     {
-                        Interval = 5,
+                        Interval = GetImportListSyncInterval(),
                         TypeName = typeof(ImportListSyncCommand).FullName
                     },
 
@@ -170,6 +170,23 @@ namespace NzbDrone.Core.Jobs
             return interval * 60 * 24;
         }
 
+        private int GetImportListSyncInterval()
+        {
+            var interval = _configService.ImportListSyncInterval;
+
+            if (interval > 0 && interval < 10)
+            {
+                return 10;
+            }
+
+            if (interval < 0)
+            {
+                return 0;
+            }
+
+            return interval;
+        }
+
         private int GetRssSyncInterval()
         {
             var interval = _configService.RssSyncInterval;
@@ -215,10 +232,14 @@ namespace NzbDrone.Core.Jobs
             var backup = _scheduledTaskRepository.GetDefinition(typeof(BackupCommand));
             backup.Interval = GetBackupInterval();
 
-            _scheduledTaskRepository.UpdateMany(new List<ScheduledTask> { rss, backup });
+            var importList = _scheduledTaskRepository.GetDefinition(typeof(ImportListSyncCommand));
+            importList.Interval = GetImportListSyncInterval();
+
+            _scheduledTaskRepository.UpdateMany(new List<ScheduledTask> { rss, backup, importList });
 
             _cache.Find(rss.TypeName).Interval = rss.Interval;
             _cache.Find(backup.TypeName).Interval = backup.Interval;
+            _cache.Find(importList.TypeName).Interval = importList.Interval;
         }
     }
 }

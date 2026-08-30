@@ -109,6 +109,13 @@ namespace NzbDrone.Core.Configuration
             set { SetValue("RssSyncInterval", value); }
         }
 
+        public int ImportListSyncInterval
+        {
+            get { return GetValueInt("ImportListSyncInterval", 5); }
+
+            set { SetValue("ImportListSyncInterval", value); }
+        }
+
         public int MaximumSize
         {
             get { return GetValueInt("MaximumSize", 0); }
