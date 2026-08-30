@@ -210,14 +210,17 @@ namespace NzbDrone.Core.MediaFiles
 
             if (_configService.DeleteEmptyFolders)
             {
-                var author = message.BookFile.Author.Value;
+                // Author can already be gone when the file is orphaned or the author is removed
+                // in the same operation. Without the author path there is no folder to collapse
+                // upwards to, but the book folder itself can still be cleaned.
+                var author = message.BookFile.Author?.Value;
                 var bookFolder = message.BookFile.Path.GetParentPath();
 
-                if (_diskProvider.GetFiles(author.Path, true).Empty())
+                if (author != null && _diskProvider.GetFiles(author.Path, true).Empty())
                 {
                     _diskProvider.DeleteFolder(author.Path, true);
                 }
-                else if (_diskProvider.GetFiles(bookFolder, true).Empty())
+                else if (bookFolder.IsNotNullOrWhiteSpace() && _diskProvider.GetFiles(bookFolder, true).Empty())
                 {
                     _diskProvider.RemoveEmptySubfolders(bookFolder);
                 }

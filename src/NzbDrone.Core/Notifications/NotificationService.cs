@@ -278,13 +278,25 @@ namespace NzbDrone.Core.Notifications
 
         public void Handle(BookFileDeletedEvent message)
         {
+            // The edition and author rows can already be gone by the time this fires (orphaned
+            // file, or the author removed in the same operation), and LazyLoaded.Value is null
+            // then. Throwing here aborts the whole handler chain, so skip instead.
+            var author = message.BookFile.Author?.Value;
+            var deletedBook = message.BookFile.Edition?.Value?.Book?.Value;
+
+            if (author == null || deletedBook == null)
+            {
+                _logger.Debug("Skipping OnBookFileDelete notification for {0}: author or edition is no longer available", message.BookFile.Path);
+                return;
+            }
+
             var deleteMessage = new BookFileDeleteMessage();
 
-            var book = new List<Book> { message.BookFile.Edition.Value.Book };
+            var book = new List<Book> { deletedBook };
 
-            deleteMessage.Message = GetMessage(message.BookFile.Author, book, message.BookFile.Quality);
+            deleteMessage.Message = GetMessage(author, book, message.BookFile.Quality);
             deleteMessage.BookFile = message.BookFile;
-            deleteMessage.Book = message.BookFile.Edition.Value.Book;
+            deleteMessage.Book = deletedBook;
             deleteMessage.Reason = message.Reason;
 
             foreach (var notification in _notificationFactory.OnBookFileDeleteEnabled())
@@ -293,7 +305,7 @@ namespace NzbDrone.Core.Notifications
                 {
                     if (message.Reason != MediaFiles.DeleteMediaFileReason.Upgrade || ((NotificationDefinition)notification.Definition).OnBookFileDeleteForUpgrade)
                     {
-                        if (ShouldHandleAuthor(notification.Definition, message.BookFile.Author))
+                        if (ShouldHandleAuthor(notification.Definition, author))
                         {
                             notification.OnBookFileDelete(deleteMessage);
                             _notificationStatusService.RecordSuccess(notification.Definition.Id);
