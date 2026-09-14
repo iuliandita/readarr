@@ -99,7 +99,7 @@ jobs:
             const here = { owner: context.repo.owner, repo: context.repo.repo };
             const TRACKING_TITLE = cfg.trackingTitle;
             const TRACKING_LABEL = 'upstream-watch';
-            const securityRe = /(security|cve|auth|password|credential|permission|vulnerab|harden|sanitiz|traversal|injection|ssrf|xss|token|reflection)/i;
+            const securityRe = /(\bsecurity\b|\bcve\b|\bauth\b|password|credential|permission|vulnerab|\bharden\b|sanitiz|\btraversal\b|injection|\bssrf\b|\bxss\b|\btoken\b|reflection)/i;
 
             const commits = await github.paginate(github.rest.repos.listCommits, {
               ...upstream,
@@ -128,7 +128,7 @@ jobs:
                 message,
                 url: c.html_url,
                 files: relevant.slice(0, 4),
-                security: securityRe.test(message) || relevant.some(f => /Authentication|Datastore|Host/.test(f))
+                security: securityRe.test(message) || relevant.some(f => f.includes('src/NzbDrone.Core/Authentication/'))
               });
             }
 
