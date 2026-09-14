@@ -97,7 +97,6 @@ class DelayProfiles extends Component {
                       {...item}
                       {...otherProps}
                       index={index}
-                      isDragging={isDragging}
                       isDraggingUp={isDraggingUp}
                       isDraggingDown={isDraggingDown}
                       onConfirmDeleteDelayProfile={onConfirmDeleteDelayProfile}
