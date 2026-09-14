@@ -437,8 +437,9 @@ namespace NzbDrone.Core.Download.Clients.QBittorrent
                     throw new DownloadClientUnavailableException("Failed to connect to qBittorrent, please check your settings.", ex);
                 }
 
-                // returns "Fails." on bad login
-                if (response.Content != "Ok.")
+                // qBittorrent >= 5.2 returns 204 with an empty body on success; older versions return "Ok.".
+                // Only a non-empty body other than "Ok." (i.e. "Fails.") is a failed login.
+                if (response.Content.IsNotNullOrWhiteSpace() && response.Content != "Ok.")
                 {
                     _logger.Debug("qbitTorrent authentication failed.");
                     throw new DownloadClientAuthenticationException("Failed to authenticate with qBittorrent.");
