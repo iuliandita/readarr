@@ -142,7 +142,7 @@
     "worker-loader": "3.0.8"
   },
   "volta": {
-    "node": "24.15.0",
+    "node": "26.8.2",
     "yarn": "1.22.22"
   },
   "resolutions": {
