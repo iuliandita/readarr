@@ -991,5 +991,43 @@ namespace NzbDrone.Core.Test.Download.DownloadClientTests.QBittorrentTests
             Mocker.GetMock<IQBittorrentProxySelector>()
                   .Verify(v => v.GetProxy(It.IsAny<QBittorrentSettings>(), true), Times.Once());
         }
+
+        private void GivenAuthLoginResponse(string content)
+        {
+            Mocker.GetMock<IHttpClient>()
+                  .Setup(s => s.Execute(It.IsAny<HttpRequest>()))
+                  .Returns<HttpRequest>(r =>
+                  {
+                      if (r.Url.FullUri.Contains("/api/v2/auth/login"))
+                      {
+                          return new HttpResponse(r, new HttpHeader(), content);
+                      }
+
+                      return new HttpResponse(r, new HttpHeader(), "5.2.3");
+                  });
+        }
+
+        [TestCase("")]
+        [TestCase("Ok.")]
+        public void should_authenticate_when_login_succeeds(string loginResponse)
+        {
+            GivenAuthLoginResponse(loginResponse);
+
+            var proxy = Mocker.Resolve<QBittorrentProxyV2>();
+            var settings = Subject.Definition.Settings.As<QBittorrentSettings>();
+
+            proxy.GetVersion(settings).Should().Be("5.2.3");
+        }
+
+        [Test]
+        public void should_throw_when_login_fails()
+        {
+            GivenAuthLoginResponse("Fails.");
+
+            var proxy = Mocker.Resolve<QBittorrentProxyV2>();
+            var settings = Subject.Definition.Settings.As<QBittorrentSettings>();
+
+            Assert.Throws<DownloadClientAuthenticationException>(() => proxy.GetVersion(settings));
+        }
     }
 }
