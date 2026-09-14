@@ -20,7 +20,7 @@ permissions:
   issues: write
 
 concurrency:
-  group: upstream-watch-${{ matrix.upstream.name }}
+  group: upstream-watch
   cancel-in-progress: false
 
 jobs:
