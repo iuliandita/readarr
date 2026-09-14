@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using FluentAssertions;
@@ -47,6 +48,27 @@ namespace NzbDrone.Core.Test.Qualities
         {
             var i = (int)source;
             i.Should().Be(expected);
+        }
+
+        [Test]
+        public void should_find_quality_by_id()
+        {
+            Quality.FindById(0).Should().Be(Quality.Unknown);
+            Quality.FindById(Quality.EPUB.Id).Should().Be(Quality.EPUB);
+        }
+
+        [Test]
+        public void should_throw_argument_exception_for_id_at_lookup_bound()
+        {
+            // An id equal to the lookup length is out of bounds; it used to surface
+            // as IndexOutOfRangeException instead of the intended ArgumentException.
+            Assert.Throws<ArgumentException>(() => Quality.FindById(Quality.AllLookup.Length));
+        }
+
+        [Test]
+        public void should_throw_argument_exception_for_id_beyond_lookup_bound()
+        {
+            Assert.Throws<ArgumentException>(() => Quality.FindById(Quality.AllLookup.Length + 100));
         }
 
         public static List<QualityProfileQualityItem> GetDefaultQualities(params Quality[] allowed)
