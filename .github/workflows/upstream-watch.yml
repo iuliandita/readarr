@@ -1,8 +1,8 @@
-name: Sonarr upstream watch
+name: Upstream watch
 
-# Scans Sonarr for changes that may be worth porting into this fork and reports
-# them on a tracking issue. Sonarr is the upstream this project shares its core
-# with; keeping an eye on it is how security and reliability fixes get found.
+# Scans projects this fork shares code or lineage with and reports changes that
+# may be worth porting. Sonarr shares the core; Chaptarr is a newer Readarr fork.
+# Reports are posted as comments on one tracking issue per upstream.
 
 on:
   schedule:
@@ -20,46 +20,85 @@ permissions:
   issues: write
 
 concurrency:
-  group: sonarr-watch
+  group: upstream-watch-${{ matrix.upstream.name }}
   cancel-in-progress: false
 
 jobs:
   watch:
-    name: Scan Sonarr for portable changes
+    name: Watch ${{ matrix.upstream.name }}
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        upstream:
+          - name: sonarr
+            owner: Sonarr
+            repo: Sonarr
+            trackingTitle: Sonarr upstream watch
+            note: ""
+            includePaths:
+              - src/NzbDrone.Core/Download/Clients/
+              - src/NzbDrone.Core/Indexers/
+              - src/NzbDrone.Core/Parser/
+              - src/NzbDrone.Core/MediaFiles/
+              - src/NzbDrone.Core/Organizer/
+              - src/NzbDrone.Core/HealthCheck/
+              - src/NzbDrone.Core/Datastore/
+              - src/NzbDrone.Core/Authentication/
+              - src/NzbDrone.Core/Blocklisting/
+              - src/NzbDrone.Common/
+              - src/NzbDrone.Host/
+              - src/Directory.Packages.props
+              - Dockerfile
+              - .github/workflows/
+            excludePaths:
+              - frontend/
+              - src/NzbDrone.Core/ImportLists/
+              - Translations/
+          - name: chaptarr
+            owner: Chaptarr
+            repo: chaptarr
+            trackingTitle: Chaptarr upstream watch
+            note: "This fork keeps ebook and audiobook as separate instances. Skip Chaptarr changes tied to its combined ebook+audiobook library model."
+            includePaths:
+              - src/NzbDrone.Core/Download/Clients/
+              - src/NzbDrone.Core/Indexers/
+              - src/NzbDrone.Core/Parser/
+              - src/NzbDrone.Core/MediaFiles/
+              - src/NzbDrone.Core/Organizer/
+              - src/NzbDrone.Core/HealthCheck/
+              - src/NzbDrone.Core/Datastore/
+              - src/NzbDrone.Core/Authentication/
+              - src/NzbDrone.Core/Blocklisting/
+              - src/NzbDrone.Core/MediaCover/
+              - src/NzbDrone.Core/MetadataSource/
+              - src/NzbDrone.Core/Notifications/
+              - src/NzbDrone.Common/
+              - src/NzbDrone.Host/
+              - src/Directory.Packages.props
+              - src/Chaptarr.Http/
+              - src/Chaptarr.Api.V1/
+              - Dockerfile
+              - .github/workflows/
+            excludePaths:
+              - frontend/
+              - src/NzbDrone.Core/ImportLists/
+              - Translations/
     steps:
       - name: Scan and report
         uses: actions/github-script@v9
         env:
           LOOKBACK_DAYS: ${{ github.event.inputs.days || '7' }}
+          UPSTREAM: ${{ toJSON(matrix.upstream) }}
         with:
           script: |
+            const cfg = JSON.parse(process.env.UPSTREAM);
             const days = parseInt(process.env.LOOKBACK_DAYS, 10) || 7;
             const since = new Date(Date.now() - days * 24 * 3600 * 1000).toISOString();
-            const upstream = { owner: 'Sonarr', repo: 'Sonarr', sha: 'develop' };
+            const upstream = { owner: cfg.owner, repo: cfg.repo, sha: 'develop' };
             const here = { owner: context.repo.owner, repo: context.repo.repo };
-            const TRACKING_TITLE = 'Sonarr upstream watch';
+            const TRACKING_TITLE = cfg.trackingTitle;
             const TRACKING_LABEL = 'upstream-watch';
-
-            // Shared-core areas worth watching. Series/episode and frontend
-            // changes are intentionally out of scope for this fork.
-            const includePaths = [
-              'src/NzbDrone.Core/Download/Clients/',
-              'src/NzbDrone.Core/Indexers/',
-              'src/NzbDrone.Core/Parser/',
-              'src/NzbDrone.Core/MediaFiles/',
-              'src/NzbDrone.Core/Organizer/',
-              'src/NzbDrone.Core/HealthCheck/',
-              'src/NzbDrone.Core/Datastore/',
-              'src/NzbDrone.Core/Authentication/',
-              'src/NzbDrone.Core/Blocklisting/',
-              'src/NzbDrone.Common/',
-              'src/NzbDrone.Host/',
-              'src/Directory.Packages.props',
-              'Dockerfile',
-              '.github/workflows/'
-            ];
-            const excludePaths = ['frontend/', 'src/NzbDrone.Core/ImportLists/', 'Translations/'];
             const securityRe = /(security|cve|auth|password|credential|permission|vulnerab|harden|sanitiz|traversal|injection|ssrf|xss|token|reflection)/i;
 
             const commits = await github.paginate(github.rest.repos.listCommits, {
@@ -79,7 +118,7 @@ jobs:
                 continue;
               }
 
-              const relevant = files.filter(f => includePaths.some(p => f.includes(p)) && !excludePaths.some(p => f.includes(p)));
+              const relevant = files.filter(f => cfg.includePaths.some(p => f.includes(p)) && !cfg.excludePaths.some(p => f.includes(p)));
               if (relevant.length === 0) {
                 continue;
               }
@@ -96,8 +135,12 @@ jobs:
             candidates.sort((a, b) => Number(b.security) - Number(a.security));
 
             const lines = [];
+            lines.push(`Upstream: https://github.com/${cfg.owner}/${cfg.repo}/commits/develop`);
             lines.push(`Scan window: last ${days} day(s), generated ${new Date().toISOString().replace('T', ' ').substring(0, 16)} UTC.`);
-            lines.push(`Upstream: https://github.com/Sonarr/Sonarr/commits/develop`);
+            if (cfg.note) {
+              lines.push('');
+              lines.push(`> ${cfg.note}`);
+            }
             lines.push('');
             if (candidates.length === 0) {
               lines.push('No shared-core candidates found in this window.');
@@ -111,7 +154,6 @@ jobs:
             }
             const body = lines.join('\n');
 
-            // Find or create the tracking issue.
             const search = await github.rest.search.issuesAndPullRequests({
               q: `repo:${here.owner}/${here.repo} is:issue is:open in:title "${TRACKING_TITLE}"`
             });
@@ -127,7 +169,7 @@ jobs:
                 ...here,
                 title: TRACKING_TITLE,
                 labels: [TRACKING_LABEL],
-                body: 'Weekly reports from the `Sonarr upstream watch` workflow. Each report lists recent Sonarr commits that touch shared-core areas; open a port issue for anything worth adopting.'
+                body: `Reports from the \`Upstream watch\` workflow for ${cfg.owner}/${cfg.repo}. Each report lists recent commits that touch shared-core areas; open a port issue for anything worth adopting.`
               });
               issueNumber = created.data.number;
             }
