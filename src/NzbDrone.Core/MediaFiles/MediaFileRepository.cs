@@ -85,7 +85,9 @@ namespace NzbDrone.Core.MediaFiles
 
         public List<BookFile> GetUnmappedFiles()
         {
-            return _database.Query<BookFile>(new SqlBuilder(_database.DatabaseType).Select(typeof(BookFile))
+            // No explicit Select: Query<T> adds the SELECT clause itself, and adding
+            // another Select(typeof(BookFile)) duplicates every column.
+            return _database.Query<BookFile>(new SqlBuilder(_database.DatabaseType)
                                               .Where<BookFile>(t => t.EditionId == 0)).ToList();
         }
 
