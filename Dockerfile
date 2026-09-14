@@ -2,6 +2,8 @@
 
 FROM node:26-trixie-slim AS frontend-build
 
+RUN npm install -g yarn@1.22.22
+
 WORKDIR /src
 
 COPY package.json yarn.lock .yarnrc tsconfig.json ./
