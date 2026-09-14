@@ -141,7 +141,6 @@ class QualityProfileItems extends Component {
                     items={items}
                     qualityIndex={`${index + 1}`}
                     isInGroup={false}
-                    isDragging={isDragging}
                     isDraggingUp={isDraggingUp}
                     isDraggingDown={isDraggingDown}
                     {...otherProps}
