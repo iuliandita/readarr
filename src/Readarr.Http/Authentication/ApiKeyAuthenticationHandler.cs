@@ -1,6 +1,9 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Encodings.Web;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication;
@@ -23,7 +26,7 @@ namespace Readarr.Http.Authentication
 
     public class ApiKeyAuthenticationHandler : AuthenticationHandler<ApiKeyAuthenticationOptions>
     {
-        private readonly string _apiKey;
+        private readonly byte[] _apiKeyBytes;
 
         public ApiKeyAuthenticationHandler(IOptionsMonitor<ApiKeyAuthenticationOptions> options,
             ILoggerFactory logger,
@@ -31,24 +34,46 @@ namespace Readarr.Http.Authentication
             IConfigFileProvider config)
             : base(options, logger, encoder)
         {
-            _apiKey = config.ApiKey;
+            _apiKeyBytes = Encoding.UTF8.GetBytes(config.ApiKey ?? string.Empty);
         }
 
         private string ParseApiKey()
         {
-            // Try query parameter
-            if (Request.Query.TryGetValue(Options.QueryName, out var value))
-            {
-                return value.FirstOrDefault();
-            }
-
-            // No ApiKey query parameter found try headers
+            // Prefer header-based secrets over the query string, which leaks into
+            // logs, browser history, and referrers.
             if (Request.Headers.TryGetValue(Options.HeaderName, out var headerValue))
             {
-                return headerValue.FirstOrDefault();
+                var apiKey = headerValue.FirstOrDefault();
+                if (!string.IsNullOrWhiteSpace(apiKey))
+                {
+                    return apiKey;
+                }
             }
 
-            return Request.Headers["Authorization"].FirstOrDefault()?.Replace("Bearer ", "");
+            if (Request.Headers.TryGetValue("Authorization", out var authorizationValue))
+            {
+                var authorization = authorizationValue.FirstOrDefault();
+                if (!string.IsNullOrWhiteSpace(authorization))
+                {
+                    const string bearerPrefix = "Bearer ";
+                    if (authorization.StartsWith(bearerPrefix, StringComparison.OrdinalIgnoreCase))
+                    {
+                        var token = authorization.Substring(bearerPrefix.Length).Trim();
+                        if (!string.IsNullOrWhiteSpace(token))
+                        {
+                            return token;
+                        }
+                    }
+                }
+            }
+
+            // Backwards compatible: query-string token support.
+            if (Request.Query.TryGetValue(Options.QueryName, out var queryValue))
+            {
+                return queryValue.FirstOrDefault();
+            }
+
+            return null;
         }
 
         protected override Task<AuthenticateResult> HandleAuthenticateAsync()
@@ -60,7 +85,9 @@ namespace Readarr.Http.Authentication
                 return Task.FromResult(AuthenticateResult.NoResult());
             }
 
-            if (_apiKey == providedApiKey)
+            var providedBytes = Encoding.UTF8.GetBytes(providedApiKey);
+            if (providedBytes.Length == _apiKeyBytes.Length &&
+                CryptographicOperations.FixedTimeEquals(providedBytes, _apiKeyBytes))
             {
                 var claims = new List<Claim>
                 {
