@@ -50,5 +50,16 @@ namespace NzbDrone.Core.Test.HealthCheck.Checks
             Subject.Check().ShouldBeError();
             ExceptionVerification.ExpectedErrors(1);
         }
+
+        [Test]
+        public void should_not_return_error_when_the_cloud_request_fails()
+        {
+            Mocker.GetMock<IHttpClient>()
+                  .Setup(s => s.Execute(It.IsAny<HttpRequest>()))
+                  .Throws(new Exception("No internet"));
+
+            Subject.Check().ShouldBeOk();
+            ExceptionVerification.ExpectedWarns(1);
+        }
     }
 }
