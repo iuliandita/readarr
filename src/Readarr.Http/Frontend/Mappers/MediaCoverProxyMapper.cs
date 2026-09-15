@@ -44,6 +44,11 @@ namespace Readarr.Http.Frontend.Mappers
 
             var imageData = _mediaCoverProxy.GetImage(hash);
 
+            if (imageData == null)
+            {
+                return new StatusCodeResult((int)HttpStatusCode.NotFound);
+            }
+
             if (!_mimeTypeProvider.TryGetContentType(filename, out var contentType))
             {
                 contentType = "application/octet-stream";
