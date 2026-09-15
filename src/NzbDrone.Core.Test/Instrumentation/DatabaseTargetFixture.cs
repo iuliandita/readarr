@@ -4,6 +4,7 @@ using FluentAssertions;
 using NLog;
 using NUnit.Framework;
 using NzbDrone.Common.Instrumentation;
+using NzbDrone.Core.Configuration;
 using NzbDrone.Core.Datastore.Migration.Framework;
 using NzbDrone.Core.Instrumentation;
 using NzbDrone.Core.MediaFiles;
@@ -23,6 +24,10 @@ namespace NzbDrone.Core.Test.Instrumentation
         [SetUp]
         public void Setup()
         {
+            Mocker.GetMock<IConfigFileProvider>()
+                .SetupGet(c => c.LogDbEnabled)
+                .Returns(true);
+
             Mocker.Resolve<ILogRepository, LogRepository>();
             Mocker.Resolve<DatabaseTarget>().Register();
 

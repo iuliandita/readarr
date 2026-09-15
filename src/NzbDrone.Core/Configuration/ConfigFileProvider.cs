@@ -39,6 +39,7 @@ namespace NzbDrone.Core.Configuration
         string ConsoleLogLevel { get; }
         bool LogSql { get; }
         int LogRotate { get; }
+        bool LogDbEnabled { get; }
         bool FilterSentryEvents { get; }
         string Branch { get; }
         string ApiKey { get; }
@@ -234,6 +235,7 @@ namespace NzbDrone.Core.Configuration
         public string Theme => _appOptions.Theme ?? GetValue("Theme", "auto", persist: false);
         public bool LogSql => _logOptions.Sql ?? GetValueBoolean("LogSql", false, persist: false);
         public int LogRotate => _logOptions.Rotate ?? GetValueInt("LogRotate", 50, persist: false);
+        public bool LogDbEnabled => _logOptions.DbEnabled ?? GetValueBoolean("LogDbEnabled", true, persist: false);
         public bool FilterSentryEvents => _logOptions.FilterSentryEvents ?? GetValueBoolean("FilterSentryEvents", true, persist: false);
         public string SslCertPath => _serverOptions.SslCertPath ?? GetValue("SslCertPath", "");
         public string SslCertPassword => _serverOptions.SslCertPassword ?? GetValue("SslCertPassword", "");

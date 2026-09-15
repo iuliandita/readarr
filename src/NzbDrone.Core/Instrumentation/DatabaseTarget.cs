@@ -7,6 +7,7 @@ using NLog.Config;
 using NLog.Targets;
 using Npgsql;
 using NzbDrone.Common.Instrumentation;
+using NzbDrone.Core.Configuration;
 using NzbDrone.Core.Datastore;
 using NzbDrone.Core.Lifecycle;
 using NzbDrone.Core.Messaging.Events;
@@ -19,14 +20,21 @@ namespace NzbDrone.Core.Instrumentation
                                       "VALUES(@Message,@Time,@Logger,@Exception,@ExceptionType,@Level)";
 
         private readonly IConnectionStringFactory _connectionStringFactory;
+        private readonly IConfigFileProvider _configFileProvider;
 
-        public DatabaseTarget(IConnectionStringFactory connectionStringFactory)
+        public DatabaseTarget(IConnectionStringFactory connectionStringFactory, IConfigFileProvider configFileProvider)
         {
             _connectionStringFactory = connectionStringFactory;
+            _configFileProvider = configFileProvider;
         }
 
         public void Register()
         {
+            if (!_configFileProvider.LogDbEnabled)
+            {
+                return;
+            }
+
             var target = new SlowRunningAsyncTargetWrapper(this) { TimeToSleepBetweenBatches = 500 };
 
             Rule = new LoggingRule("*", LogLevel.Info, target);
