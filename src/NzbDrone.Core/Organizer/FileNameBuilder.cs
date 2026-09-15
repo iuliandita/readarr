@@ -484,12 +484,14 @@ namespace NzbDrone.Core.Organizer
 
         private string GetOriginalTitle(BookFile bookFile)
         {
+            var namingConfig = _namingConfigService.GetConfig();
+
             if (bookFile.SceneName.IsNullOrWhiteSpace())
             {
-                return GetOriginalFileName(bookFile);
+                return CleanFileName(GetOriginalFileName(bookFile), namingConfig);
             }
 
-            return bookFile.SceneName;
+            return CleanFileName(bookFile.SceneName, namingConfig);
         }
 
         private string GetOriginalFileName(BookFile bookFile)

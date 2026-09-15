@@ -38,5 +38,10 @@ namespace NzbDrone.Common.Extensions
         {
             return dateTime >= afterDateTime && dateTime <= beforeDateTime;
         }
+
+        public static DateTime WithoutTicks(this DateTime dateTime)
+        {
+            return dateTime.AddTicks(-(dateTime.Ticks % TimeSpan.TicksPerSecond));
+        }
     }
 }
