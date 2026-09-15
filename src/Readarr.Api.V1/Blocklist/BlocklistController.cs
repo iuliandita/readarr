@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using Microsoft.AspNetCore.Mvc;
 using NzbDrone.Core.Blocklisting;
 using NzbDrone.Core.CustomFormats;
@@ -26,7 +28,16 @@ namespace Readarr.Api.V1.Blocklist
         public PagingResource<BlocklistResource> GetBlocklist([FromQuery] PagingRequestResource paging)
         {
             var pagingResource = new PagingResource<BlocklistResource>(paging);
-            var pagingSpec = pagingResource.MapToPagingSpec<BlocklistResource, NzbDrone.Core.Blocklisting.Blocklist>("date", SortDirection.Descending);
+            var pagingSpec = pagingResource.MapToPagingSpec<BlocklistResource, NzbDrone.Core.Blocklisting.Blocklist>(
+                new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+                {
+                    "authorMetadata.sortName",
+                    "sourceTitle",
+                    "date",
+                    "indexer"
+                },
+                "date",
+                SortDirection.Descending);
 
             return pagingSpec.ApplyToPage(_blocklistService.Paged, model => BlocklistResourceMapper.MapToResource(model, _formatCalculator));
         }
