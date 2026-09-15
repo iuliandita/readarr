@@ -199,6 +199,25 @@ namespace NzbDrone.Common.Disk
             }
 
             var fi = _fileSystem.FileInfo.FromFileName(path);
+
+            try
+            {
+                // If the file is a symlink, resolve the target path and get the size of the target file.
+                if (fi.Attributes.HasFlag(FileAttributes.ReparsePoint))
+                {
+                    var targetPath = new FileInfo(path).ResolveLinkTarget(true)?.FullName;
+
+                    if (targetPath != null)
+                    {
+                        fi = _fileSystem.FileInfo.FromFileName(targetPath);
+                    }
+                }
+            }
+            catch (IOException ex)
+            {
+                Logger.Trace(ex, "Unable to resolve symlink target for {0}", path);
+            }
+
             return fi.Length;
         }
 
