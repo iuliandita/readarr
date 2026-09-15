@@ -34,8 +34,8 @@
     <PackageVersion Include="MonoTorrent" Version="2.0.7" />
     <PackageVersion Include="NBuilder" Version="6.1.0" />
     <PackageVersion Include="Newtonsoft.Json" Version="13.0.3" />
-    <PackageVersion Include="NLog.Extensions.Logging" Version="5.2.3" />
-    <PackageVersion Include="NLog" Version="5.1.4" />
+    <PackageVersion Include="NLog.Extensions.Logging" Version="5.3.11" />
+    <PackageVersion Include="NLog" Version="5.3.4" />
     <PackageVersion Include="NLog.Targets.Syslog" Version="7.0.0" />
     <PackageVersion Include="Npgsql" Version="7.0.10" />
     <PackageVersion Include="NUnit3TestAdapter" Version="4.2.1" />
@@ -48,7 +48,7 @@
     <PackageVersion Include="Selenium.WebDriver.ChromeDriver" Version="134.0.6998.16500" />
     <PackageVersion Include="Sentry" Version="4.0.2" />
     <PackageVersion Include="SharpZipLib" Version="1.4.2" />
-    <PackageVersion Include="SixLabors.ImageSharp" Version="3.1.11" />
+    <PackageVersion Include="SixLabors.ImageSharp" Version="3.1.12" />
     <PackageVersion Include="StyleCop.Analyzers" Version="1.1.118" />
     <PackageVersion Include="Swashbuckle.AspNetCore.Annotations" Version="6.6.2" />
     <PackageVersion Include="Swashbuckle.AspNetCore.SwaggerGen" Version="6.6.2" />
