@@ -1,0 +1,61 @@
+name: CI
+
+# Light backend gate: compile the solution and run the unit suite. The full
+# suite runs in well under a minute once built, so the build is the only real
+# cost. Frontend lint/build and the integration suite are intentionally left
+# out to keep PR feedback fast.
+on:
+  pull_request:
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
+      - "LICENSE.md"
+      - ".github/ISSUE_TEMPLATE/**"
+      - ".github/*.yml"
+  push:
+    branches:
+      - develop
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
+      - "LICENSE.md"
+      - ".github/ISSUE_TEMPLATE/**"
+      - ".github/*.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Build and unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v5
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('src/Directory.Packages.props', 'src/**/*.csproj', 'src/NuGet.config') }}
+          restore-keys: |
+            nuget-${{ runner.os }}-
+
+      - name: Build
+        run: dotnet build src/Readarr.sln -c Release -p:Platform=Posix --nologo
+
+      - name: Unit tests
+        run: >
+          dotnet test src/Readarr.sln -c Release -p:Platform=Posix --no-build --nologo
+          --filter "Category!=ManualTest&Category!=WINDOWS&Category!=IntegrationTest&Category!=AutomationTest"

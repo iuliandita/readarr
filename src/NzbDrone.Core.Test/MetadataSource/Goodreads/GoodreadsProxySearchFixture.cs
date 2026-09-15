@@ -12,6 +12,7 @@ using NzbDrone.Test.Common;
 namespace NzbDrone.Core.Test.MetadataSource.Goodreads
 {
     [TestFixture]
+    [Category("IntegrationTest")]
     public class GoodreadsProxySearchFixture : CoreTest<GoodreadsSearchProxy>
     {
         [SetUp]
