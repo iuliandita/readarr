@@ -1,13 +1,20 @@
 using System.Collections.Generic;
 using System.Linq;
 using NzbDrone.Common.Disk;
+using NzbDrone.Common.Extensions;
 using NzbDrone.Core.Books.Events;
+using NzbDrone.Core.Datastore.Events;
 using NzbDrone.Core.ImportLists;
 using NzbDrone.Core.Localization;
 using NzbDrone.Core.MediaFiles.Events;
+using NzbDrone.Core.RootFolders;
+using NzbDrone.Core.ThingiProvider.Events;
 
 namespace NzbDrone.Core.HealthCheck.Checks
 {
+    [CheckOn(typeof(ProviderUpdatedEvent<IImportList>))]
+    [CheckOn(typeof(ProviderDeletedEvent<IImportList>))]
+    [CheckOn(typeof(ModelEvent<RootFolder>))]
     [CheckOn(typeof(AuthorDeletedEvent))]
     [CheckOn(typeof(AuthorMovedEvent))]
     [CheckOn(typeof(BookImportedEvent), CheckOnCondition.FailedOnly)]
@@ -17,17 +24,21 @@ namespace NzbDrone.Core.HealthCheck.Checks
     {
         private readonly IImportListFactory _importListFactory;
         private readonly IDiskProvider _diskProvider;
+        private readonly IRootFolderService _rootFolderService;
 
-        public ImportListRootFolderCheck(IImportListFactory importListFactory, IDiskProvider diskProvider, ILocalizationService localizationService)
+        public ImportListRootFolderCheck(IImportListFactory importListFactory, IDiskProvider diskProvider, IRootFolderService rootFolderService, ILocalizationService localizationService)
             : base(localizationService)
         {
             _importListFactory = importListFactory;
             _diskProvider = diskProvider;
+            _rootFolderService = rootFolderService;
         }
 
         public override HealthCheck Check()
         {
             var importLists = _importListFactory.All();
+            var rootFolders = _rootFolderService.All();
+
             var missingRootFolders = new Dictionary<string, List<ImportListDefinition>>();
 
             foreach (var importList in importLists)
@@ -41,7 +52,10 @@ namespace NzbDrone.Core.HealthCheck.Checks
                     continue;
                 }
 
-                if (!_diskProvider.FolderExists(rootFolderPath))
+                if (rootFolderPath.IsNullOrWhiteSpace() ||
+                    !rootFolderPath.IsPathValid(PathValidationType.CurrentOs) ||
+                    !rootFolders.Any(r => r.Path.PathEquals(rootFolderPath)) ||
+                    !_diskProvider.FolderExists(rootFolderPath))
                 {
                     missingRootFolders.Add(rootFolderPath, new List<ImportListDefinition> { importList });
                 }
