@@ -12,7 +12,7 @@ namespace NzbDrone.Core.Download
     public interface IFailedDownloadService
     {
         void MarkAsFailed(int historyId, bool skipRedownload = false);
-        void MarkAsFailed(string downloadId, bool skipRedownload = false);
+        void MarkAsFailed(TrackedDownload trackedDownload, bool skipRedownload = false);
         void Check(TrackedDownload trackedDownload);
         void ProcessFailed(TrackedDownload trackedDownload);
     }
@@ -20,15 +20,12 @@ namespace NzbDrone.Core.Download
     public class FailedDownloadService : IFailedDownloadService
     {
         private readonly IHistoryService _historyService;
-        private readonly ITrackedDownloadService _trackedDownloadService;
         private readonly IEventAggregator _eventAggregator;
 
         public FailedDownloadService(IHistoryService historyService,
-                                     ITrackedDownloadService trackedDownloadService,
                                      IEventAggregator eventAggregator)
         {
             _historyService = historyService;
-            _trackedDownloadService = trackedDownloadService;
             _eventAggregator = eventAggregator;
         }
 
@@ -39,24 +36,22 @@ namespace NzbDrone.Core.Download
             var downloadId = history.DownloadId;
             if (downloadId.IsNullOrWhiteSpace())
             {
-                PublishDownloadFailedEvent(new List<EntityHistory> { history }, "Manually marked as failed", skipRedownload: skipRedownload);
+                PublishDownloadFailedEvent(history, new List<int> { history.BookId }, "Manually marked as failed", skipRedownload: skipRedownload);
             }
             else
             {
-                var grabbedHistory = _historyService.Find(downloadId, EntityHistoryEventType.Grabbed).ToList();
-                PublishDownloadFailedEvent(grabbedHistory, "Manually marked as failed");
+                var grabbedHistory = GetGrabbedHistory(downloadId);
+                PublishDownloadFailedEvent(history, GetBookIds(grabbedHistory), "Manually marked as failed");
             }
         }
 
-        public void MarkAsFailed(string downloadId, bool skipRedownload = false)
+        public void MarkAsFailed(TrackedDownload trackedDownload, bool skipRedownload = false)
         {
-            var history = _historyService.Find(downloadId, EntityHistoryEventType.Grabbed);
+            var history = GetGrabbedHistory(trackedDownload.DownloadItem.DownloadId);
 
             if (history.Any())
             {
-                var trackedDownload = _trackedDownloadService.Find(downloadId);
-
-                PublishDownloadFailedEvent(history, "Manually marked as failed", trackedDownload, skipRedownload);
+                PublishDownloadFailedEvent(history.First(), GetBookIds(history), "Manually marked as failed", trackedDownload, skipRedownload);
             }
         }
 
@@ -71,9 +66,7 @@ namespace NzbDrone.Core.Download
             if (trackedDownload.DownloadItem.IsEncrypted ||
                 trackedDownload.DownloadItem.Status == DownloadItemStatus.Failed)
             {
-                var grabbedItems = _historyService
-                                   .Find(trackedDownload.DownloadItem.DownloadId, EntityHistoryEventType.Grabbed)
-                                   .ToList();
+                var grabbedItems = GetGrabbedHistory(trackedDownload.DownloadItem.DownloadId);
 
                 if (grabbedItems.Empty())
                 {
@@ -92,9 +85,7 @@ namespace NzbDrone.Core.Download
                 return;
             }
 
-            var grabbedItems = _historyService
-                               .Find(trackedDownload.DownloadItem.DownloadId, EntityHistoryEventType.Grabbed)
-                               .ToList();
+            var grabbedItems = GetGrabbedHistory(trackedDownload.DownloadItem.DownloadId);
 
             if (grabbedItems.Empty())
             {
@@ -113,18 +104,17 @@ namespace NzbDrone.Core.Download
             }
 
             trackedDownload.State = TrackedDownloadState.DownloadFailed;
-            PublishDownloadFailedEvent(grabbedItems, failure, trackedDownload);
+            PublishDownloadFailedEvent(grabbedItems.First(), GetBookIds(grabbedItems), failure, trackedDownload);
         }
 
-        private void PublishDownloadFailedEvent(List<EntityHistory> historyItems, string message, TrackedDownload trackedDownload = null, bool skipRedownload = false)
+        private void PublishDownloadFailedEvent(EntityHistory historyItem, List<int> bookIds, string message, TrackedDownload trackedDownload = null, bool skipRedownload = false)
         {
-            var historyItem = historyItems.Last();
             Enum.TryParse(historyItem.Data.GetValueOrDefault(EntityHistory.RELEASE_SOURCE, ReleaseSourceType.Unknown.ToString()), out ReleaseSourceType releaseSource);
 
             var downloadFailedEvent = new DownloadFailedEvent
             {
                 AuthorId = historyItem.AuthorId,
-                BookIds = historyItems.Select(h => h.BookId).ToList(),
+                BookIds = bookIds,
                 Quality = historyItem.Quality,
                 SourceTitle = historyItem.SourceTitle,
                 DownloadClient = historyItem.Data.GetValueOrDefault(EntityHistory.DOWNLOAD_CLIENT),
@@ -137,6 +127,19 @@ namespace NzbDrone.Core.Download
             };
 
             _eventAggregator.PublishEvent(downloadFailedEvent);
+        }
+
+        private List<int> GetBookIds(List<EntityHistory> historyItems)
+        {
+            return historyItems.Select(h => h.BookId).Distinct().ToList();
+        }
+
+        private List<EntityHistory> GetGrabbedHistory(string downloadId)
+        {
+            // Sort by date so items are always in the same order
+            return _historyService.Find(downloadId, EntityHistoryEventType.Grabbed)
+                .OrderByDescending(h => h.Date)
+                .ToList();
         }
     }
 }
