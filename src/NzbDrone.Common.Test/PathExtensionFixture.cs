@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Text;
 using FluentAssertions;
 using Moq;
 using NUnit.Framework;
@@ -80,6 +81,16 @@ namespace NzbDrone.Common.Test
         {
             WindowsOnly();
             first.PathEquals(second.AsOsAgnostic()).Should().BeTrue();
+        }
+
+        [Test]
+        public void should_compare_paths_with_different_unicode_representations_as_equal()
+        {
+            var path1 = "caf\u00e9.mkv";
+            var path2 = "cafe\u0301.mkv";
+
+            path1.Normalize(NormalizationForm.FormC).PathEquals(path2.Normalize(NormalizationForm.FormD)).Should().BeTrue();
+            path1.PathEquals(path2).Should().BeTrue();
         }
 
         [TestCase(@"C:\Test", @"C:\Test2\")]
