@@ -85,7 +85,15 @@ namespace NzbDrone.Common
                     var zipStream = zipFile.GetInputStream(zipEntry);
 
                     // Manipulate the output filename here as desired.
-                    var fullZipToPath = Path.Combine(destination, entryFileName);
+                    var fullZipToPath = Path.GetFullPath(Path.Combine(destination, entryFileName));
+                    var destinationPath = Path.GetFullPath(destination).TrimEnd(Path.DirectorySeparatorChar);
+
+                    // Ensure the resolved path stays within the destination directory (Zip Slip)
+                    if (!fullZipToPath.StartsWith(destinationPath + Path.DirectorySeparatorChar, StringComparison.Ordinal))
+                    {
+                        throw new IOException(string.Format("Entry is outside the target dir: {0}", entryFileName));
+                    }
+
                     var directoryName = Path.GetDirectoryName(fullZipToPath);
                     if (directoryName.Length > 0)
                     {
