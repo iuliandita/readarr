@@ -122,7 +122,7 @@ namespace NzbDrone.Core.Test.Download.DownloadClientTests.Blackhole
 
             VerifyCompleted(result);
 
-            result.CanBeRemoved.Should().BeFalse();
+            result.CanBeRemoved.Should().BeTrue();
             result.CanMoveFiles.Should().BeFalse();
         }
 

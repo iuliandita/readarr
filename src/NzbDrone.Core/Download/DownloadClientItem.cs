@@ -39,6 +39,7 @@ namespace NzbDrone.Core.Download
         public int Id { get; set; }
         public string Name { get; set; }
         public bool HasPostImportCategory { get; set; }
+        public bool RemoveCompletedDownloads { get; set; }
 
         public static DownloadClientItemClientInfo FromDownloadClient<TSettings>(
             DownloadClientBase<TSettings> downloadClient, bool hasPostImportCategory)
@@ -50,7 +51,8 @@ namespace NzbDrone.Core.Download
                 Type = downloadClient.Name,
                 Id = downloadClient.Definition.Id,
                 Name = downloadClient.Definition.Name,
-                HasPostImportCategory = hasPostImportCategory
+                HasPostImportCategory = hasPostImportCategory,
+                RemoveCompletedDownloads = downloadClient.Definition is DownloadClientDefinition definition ? definition.RemoveCompletedDownloads : true
             };
         }
     }
