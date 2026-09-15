@@ -223,6 +223,8 @@ namespace NzbDrone.Core.Datastore
 
             SqlMapper.RemoveTypeMap(typeof(DateTime));
             SqlMapper.AddTypeHandler(new DapperUtcConverter());
+            SqlMapper.RemoveTypeMap(typeof(TimeSpan));
+            SqlMapper.RemoveTypeMap(typeof(TimeSpan?));
             SqlMapper.AddTypeHandler(new DapperTimeSpanConverter());
             SqlMapper.AddTypeHandler(new DapperQualityIntConverter());
             SqlMapper.AddTypeHandler(new EmbeddedDocumentConverter<List<QualityProfileQualityItem>>(new QualityIntConverter()));

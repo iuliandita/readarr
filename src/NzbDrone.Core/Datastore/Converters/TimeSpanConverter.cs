@@ -13,7 +13,7 @@ namespace NzbDrone.Core.Datastore.Converters
 
         public override TimeSpan Parse(object value)
         {
-            return TimeSpan.Parse((string)value);
+            return value is string str ? TimeSpan.Parse(str) : TimeSpan.Zero;
         }
     }
 }
