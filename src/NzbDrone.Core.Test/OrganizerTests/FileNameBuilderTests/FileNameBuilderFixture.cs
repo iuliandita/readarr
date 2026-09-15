@@ -453,6 +453,16 @@ namespace NzbDrone.Core.Test.OrganizerTests.FileNameBuilderTests
         }
 
         [Test]
+        public void should_replace_illegal_characters_in_original_title_token()
+        {
+            _namingConfig.StandardBookFormat = "{Original Title}";
+            _trackFile.SceneName = "30.Rock.S01E01.xvid:LOL";
+
+            Subject.BuildBookFileName(_author, _edition, _trackFile)
+                   .Should().Be("30.Rock.S01E01.xvid-LOL");
+        }
+
+        [Test]
         public void should_should_replace_release_group()
         {
             _namingConfig.StandardBookFormat = "{Release Group}";

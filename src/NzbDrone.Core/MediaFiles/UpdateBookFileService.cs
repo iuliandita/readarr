@@ -4,6 +4,7 @@ using System.Linq;
 using NLog;
 using NzbDrone.Common.Disk;
 using NzbDrone.Common.EnvironmentInfo;
+using NzbDrone.Common.Extensions;
 using NzbDrone.Common.Instrumentation.Extensions;
 using NzbDrone.Core.Books;
 using NzbDrone.Core.Configuration;
@@ -59,7 +60,7 @@ namespace NzbDrone.Core.MediaFiles
                         var relDate = book.ReleaseDate.Value;
 
                         // avoiding false +ve checks and set date skewing by not using UTC (Windows)
-                        var oldDateTime = _diskProvider.FileGetLastWrite(bookFilePath);
+                        var oldLastWrite = _diskProvider.FileGetLastWrite(bookFilePath);
 
                         if (OsInfo.IsNotWindows && relDate < EpochTime)
                         {
@@ -67,12 +68,12 @@ namespace NzbDrone.Core.MediaFiles
                             relDate = EpochTime;
                         }
 
-                        if (!DateTime.Equals(relDate, oldDateTime))
+                        if (!DateTime.Equals(relDate.WithoutTicks(), oldLastWrite.WithoutTicks()))
                         {
                             try
                             {
                                 _diskProvider.FileSetLastWriteTime(bookFilePath, relDate);
-                                _logger.Debug("Date of file [{0}] changed from '{1}' to '{2}'", bookFilePath, oldDateTime, relDate);
+                                _logger.Debug("Date of file [{0}] changed from '{1}' to '{2}'", bookFilePath, oldLastWrite, relDate);
 
                                 return true;
                             }
