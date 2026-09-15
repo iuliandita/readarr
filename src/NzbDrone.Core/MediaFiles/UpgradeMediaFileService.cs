@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using NLog;
 using NzbDrone.Common.Disk;
@@ -5,6 +6,7 @@ using NzbDrone.Common.Extensions;
 using NzbDrone.Core.Books.Calibre;
 using NzbDrone.Core.MediaFiles.BookImport;
 using NzbDrone.Core.Parser.Model;
+using NzbDrone.Core.Qualities;
 using NzbDrone.Core.RootFolders;
 
 namespace NzbDrone.Core.MediaFiles
@@ -48,6 +50,21 @@ namespace NzbDrone.Core.MediaFiles
         {
             var moveFileResult = new BookFileMoveResult();
             var existingFiles = localBook.Book.BookFiles.Value;
+
+            // Last-line quality guard: an approved import must never destroy a
+            // file that still outranks the incoming one in the author's profile.
+            var profile = localBook.Author?.QualityProfile?.Value;
+
+            if (profile?.Items?.Any() == true && bookFile.Quality != null)
+            {
+                var comparer = new QualityModelComparer(profile);
+                var betterExisting = existingFiles.FirstOrDefault(f => f.Quality != null && comparer.Compare(f.Quality, bookFile.Quality) > 0);
+
+                if (betterExisting != null)
+                {
+                    throw new InvalidOperationException($"Refusing to replace '{betterExisting.Path}' ({betterExisting.Quality}) with lower-ranked '{localBook.Path}' ({bookFile.Quality})");
+                }
+            }
 
             var rootFolderPath = _diskProvider.GetParentFolder(localBook.Author.Path);
             var rootFolder = _rootFolderService.GetBestRootFolder(rootFolderPath);

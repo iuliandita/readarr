@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using FizzWare.NBuilder;
@@ -9,6 +10,8 @@ using NzbDrone.Core.Books;
 using NzbDrone.Core.Datastore;
 using NzbDrone.Core.MediaFiles;
 using NzbDrone.Core.Parser.Model;
+using NzbDrone.Core.Profiles.Qualities;
+using NzbDrone.Core.Qualities;
 using NzbDrone.Core.RootFolders;
 using NzbDrone.Core.Test.Framework;
 using NzbDrone.Test.Common;
@@ -133,6 +136,60 @@ namespace NzbDrone.Core.Test.MediaFiles
             Subject.UpgradeBookFile(_trackFile, _localTrack);
 
             // Mocker.GetMock<IMediaFileService>().Verify(v => v.Delete(_localTrack.Book.BookFiles.Value, It.IsAny<DeleteMediaFileReason>()), Times.Never());
+        }
+
+        [Test]
+        public void should_refuse_to_delete_an_existing_file_that_outranks_the_incoming_file()
+        {
+            GivenQualityProfile();
+            GivenExistingFile(Quality.M4B, "Book.m4b");
+            _trackFile.Quality = new QualityModel(Quality.MP3);
+
+            Assert.Throws<InvalidOperationException>(() => Subject.UpgradeBookFile(_trackFile, _localTrack));
+
+            Mocker.GetMock<IRecycleBinProvider>().Verify(v => v.DeleteFile(It.IsAny<string>(), It.IsAny<string>()), Times.Never());
+            Mocker.GetMock<IMediaFileService>().Verify(v => v.Delete(It.IsAny<BookFile>(), It.IsAny<DeleteMediaFileReason>()), Times.Never());
+        }
+
+        [Test]
+        public void should_replace_the_existing_file_when_the_incoming_file_is_an_upgrade()
+        {
+            GivenQualityProfile();
+            GivenExistingFile(Quality.MP3, "Book.mp3");
+            _trackFile.Quality = new QualityModel(Quality.M4B);
+
+            Subject.UpgradeBookFile(_trackFile, _localTrack);
+
+            Mocker.GetMock<IRecycleBinProvider>().Verify(v => v.DeleteFile(It.IsAny<string>(), It.IsAny<string>()), Times.Once());
+        }
+
+        private void GivenQualityProfile()
+        {
+            _localTrack.Author.QualityProfile = new LazyLoaded<QualityProfile>(new QualityProfile
+            {
+                Cutoff = Quality.M4B.Id,
+                Items = new List<QualityProfileQualityItem>
+                {
+                    new QualityProfileQualityItem { Quality = Quality.MP3, Allowed = true },
+                    new QualityProfileQualityItem { Quality = Quality.M4B, Allowed = true }
+                }
+            });
+        }
+
+        private void GivenExistingFile(Quality quality, string fileName)
+        {
+            _localTrack.Book = new Book
+            {
+                BookFiles = new LazyLoaded<List<BookFile>>(new List<BookFile>
+                {
+                    new BookFile
+                    {
+                        Id = 1,
+                        Path = Path.Combine(_rootPath, fileName),
+                        Quality = new QualityModel(quality)
+                    }
+                })
+            };
         }
     }
 }
