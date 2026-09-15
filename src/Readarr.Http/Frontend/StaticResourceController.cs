@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
@@ -15,6 +16,7 @@ namespace Readarr.Http.Frontend
     {
         private readonly IEnumerable<IMapHttpRequestsToDisk> _requestMappers;
         private readonly Logger _logger;
+        private static readonly Regex InvalidPathRegex = new Regex(@"([\/\\]|%2f|%5c)\.\.|\.\.([\/\\]|%2f|%5c)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
         public StaticResourceController(IEnumerable<IMapHttpRequestsToDisk> requestMappers,
             Logger logger)
@@ -48,6 +50,11 @@ namespace Readarr.Http.Frontend
         private IActionResult MapResource(string path)
         {
             path = "/" + (path ?? "");
+
+            if (InvalidPathRegex.IsMatch(path))
+            {
+                return NotFound();
+            }
 
             var mapper = _requestMappers.SingleOrDefault(m => m.CanHandle(path));
 
