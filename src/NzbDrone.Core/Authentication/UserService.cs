@@ -1,4 +1,5 @@
 using System;
+using System.Security.Cryptography;
 using NzbDrone.Common.Disk;
 using NzbDrone.Common.EnvironmentInfo;
 using NzbDrone.Common.Extensions;
@@ -17,6 +18,10 @@ namespace NzbDrone.Core.Authentication
 
     public class UserService : IUserService
     {
+        private const int Iterations = 10000;
+        private const int SaltSize = 128 / 8;
+        private const int HashSize = 256 / 8;
+
         private readonly IUserRepository _repo;
         private readonly IAppFolderInfo _appFolderInfo;
         private readonly IDiskProvider _diskProvider;
@@ -30,12 +35,15 @@ namespace NzbDrone.Core.Authentication
 
         public User Add(string username, string password)
         {
-            return _repo.Insert(new User
+            var user = new User
             {
                 Identifier = Guid.NewGuid(),
-                Username = username.ToLowerInvariant(),
-                Password = password.SHA256Hash()
-            });
+                Username = username.ToLowerInvariant()
+            };
+
+            SetUserHashedPassword(user, password);
+
+            return _repo.Insert(user);
         }
 
         public User Update(User user)
@@ -52,9 +60,9 @@ namespace NzbDrone.Core.Authentication
                 return Add(username, password);
             }
 
-            if (user.Password != password)
+            if (password.IsNotNullOrWhiteSpace())
             {
-                user.Password = password.SHA256Hash();
+                SetUserHashedPassword(user, password);
             }
 
             user.Username = username.ToLowerInvariant();
@@ -81,7 +89,19 @@ namespace NzbDrone.Core.Authentication
                 return null;
             }
 
-            if (user.Password == password.SHA256Hash())
+            if (user.Salt.IsNullOrWhiteSpace())
+            {
+                // Upgrade the legacy unsalted SHA256 hash on a successful login.
+                if (user.Password == password.SHA256Hash())
+                {
+                    SetUserHashedPassword(user, password);
+                    return Update(user);
+                }
+
+                return null;
+            }
+
+            if (VerifyHashedPassword(user, password))
             {
                 return user;
             }
@@ -92,6 +112,47 @@ namespace NzbDrone.Core.Authentication
         public User FindUser(Guid identifier)
         {
             return _repo.FindUser(identifier);
+        }
+
+        private void SetUserHashedPassword(User user, string password)
+        {
+            var salt = GenerateSalt();
+
+            user.Iterations = Iterations;
+            user.Salt = Convert.ToBase64String(salt);
+            user.Password = GetHashedPassword(password, salt, Iterations);
+        }
+
+        private static byte[] GenerateSalt()
+        {
+            return RandomNumberGenerator.GetBytes(SaltSize);
+        }
+
+        private static string GetHashedPassword(string password, byte[] salt, int iterations)
+        {
+            var hash = Rfc2898DeriveBytes.Pbkdf2(password, salt, iterations, HashAlgorithmName.SHA512, HashSize);
+            return Convert.ToBase64String(hash);
+        }
+
+        private static bool VerifyHashedPassword(User user, string password)
+        {
+            if (user.Iterations <= 0 || user.Salt.IsNullOrWhiteSpace())
+            {
+                return false;
+            }
+
+            try
+            {
+                var salt = Convert.FromBase64String(user.Salt);
+                var expected = Convert.FromBase64String(user.Password);
+                var actual = Rfc2898DeriveBytes.Pbkdf2(password, salt, user.Iterations, HashAlgorithmName.SHA512, expected.Length);
+
+                return CryptographicOperations.FixedTimeEquals(expected, actual);
+            }
+            catch (FormatException)
+            {
+                return false;
+            }
         }
     }
 }
