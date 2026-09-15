@@ -19,6 +19,7 @@ namespace NzbDrone.Core.Download.Clients.Deluge
     public class Deluge : TorrentClientBase<DelugeSettings>
     {
         private readonly IDelugeProxy _proxy;
+        private bool _hasAttemptedReconnecting;
 
         public Deluge(IDelugeProxy proxy,
                       ITorrentFileInfoReader torrentFileInfoReader,
@@ -126,14 +127,9 @@ namespace NzbDrone.Core.Download.Clients.Deluge
 
             foreach (var torrent in torrents)
             {
-                // Silently ignore torrents with no hash
-                if (torrent.Hash.IsNullOrWhiteSpace())
-                {
-                    continue;
-                }
-
-                // Ignore torrents without a name, but track to log a single warning for all invalid torrents.
-                if (torrent.Name.IsNullOrWhiteSpace())
+                // Ignore torrents without a hash or name, but track to log a single warning
+                // for all invalid torrents as well as reconnect to the daemon.
+                if (torrent.Hash.IsNullOrWhiteSpace() || torrent.Name.IsNullOrWhiteSpace())
                 {
                     ignoredCount++;
                     continue;
@@ -188,6 +184,7 @@ namespace NzbDrone.Core.Download.Clients.Deluge
                 // Here we detect if Deluge is managing the torrent and whether the seed criteria has been met.
                 // This allows drone to delete the torrent as appropriate.
                 item.CanMoveFiles = item.CanBeRemoved =
+                    item.DownloadClientInfo.RemoveCompletedDownloads &&
                     torrent.IsAutoManaged &&
                     torrent.StopAtRatio &&
                     torrent.Ratio >= torrent.StopRatio &&
@@ -198,7 +195,19 @@ namespace NzbDrone.Core.Download.Clients.Deluge
 
             if (ignoredCount > 0)
             {
-                _logger.Warn("{0} torrent(s) were ignored becuase they did not have a title, check Deluge and remove any invalid torrents");
+                if (!_hasAttemptedReconnecting)
+                {
+                    _hasAttemptedReconnecting = true;
+                    _proxy.ReconnectToDaemon(Settings);
+                }
+                else
+                {
+                    _logger.Warn("{0} torrent(s) were ignored because they did not have a hash or title. Deluge may have disconnected from its daemon. If you continue to see this error, check Deluge for invalid torrents.", ignoredCount);
+                }
+            }
+            else
+            {
+                _hasAttemptedReconnecting = false;
             }
 
             return items;
@@ -318,9 +327,9 @@ namespace NzbDrone.Core.Download.Clients.Deluge
                 return null;
             }
 
-            var enabledPlugins = _proxy.GetEnabledPlugins(Settings);
+            var methods = _proxy.GetMethods(Settings);
 
-            if (!enabledPlugins.Contains("Label"))
+            if (!methods.Any(m => m.StartsWith("label.")))
             {
                 return new NzbDroneValidationFailure("MusicCategory", "Label plugin not activated")
                 {

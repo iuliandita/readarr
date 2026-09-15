@@ -127,10 +127,9 @@ namespace NzbDrone.Core.Download.Clients.Aria2
 
                 var outputPath = _remotePathMappingService.RemapRemoteToLocal(Settings.Host, new OsPath(GetOutputPath(torrent)));
 
-                yield return new DownloadClientItem
+                var queueItem = new DownloadClientItem
                 {
                     CanMoveFiles = false,
-                    CanBeRemoved = torrent.Status == "complete",
                     Category = null,
                     DownloadClientInfo = DownloadClientItemClientInfo.FromDownloadClient(this, false),
                     DownloadId = torrent.InfoHash?.ToUpper(),
@@ -145,6 +144,10 @@ namespace NzbDrone.Core.Download.Clients.Aria2
                     Title = title,
                     TotalSize = totalLength,
                 };
+
+                queueItem.CanBeRemoved = queueItem.DownloadClientInfo.RemoveCompletedDownloads && torrent.Status == "complete";
+
+                yield return queueItem;
             }
         }
 
