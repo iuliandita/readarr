@@ -6,7 +6,7 @@ on:
       - "v*"
 
 permissions:
-  contents: read
+  contents: write
   packages: write
 
 concurrency:
@@ -76,3 +76,13 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           cache-from: type=gha,scope=runtime-alpine
           cache-to: type=gha,mode=max,scope=runtime-alpine
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            echo "Release $GITHUB_REF_NAME already exists, skipping."
+          else
+            gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --generate-notes --verify-tag
+          fi
