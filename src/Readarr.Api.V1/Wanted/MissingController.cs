@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using Microsoft.AspNetCore.Mvc;
 using NzbDrone.Core.AuthorStats;
 using NzbDrone.Core.Books;
@@ -28,13 +30,16 @@ namespace Readarr.Api.V1.Wanted
         public PagingResource<BookResource> GetMissingBooks([FromQuery] PagingRequestResource paging, bool includeAuthor = false, bool monitored = true)
         {
             var pagingResource = new PagingResource<BookResource>(paging);
-            var pagingSpec = new PagingSpec<Book>
-            {
-                Page = pagingResource.Page,
-                PageSize = pagingResource.PageSize,
-                SortKey = pagingResource.SortKey,
-                SortDirection = pagingResource.SortDirection
-            };
+            var pagingSpec = pagingResource.MapToPagingSpec<BookResource, Book>(
+                new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+                {
+                    "authorMetadata.sortName",
+                    "books.title",
+                    "releaseDate",
+                    "books.lastSearchTime"
+                },
+                "id",
+                SortDirection.Descending);
 
             if (monitored)
             {

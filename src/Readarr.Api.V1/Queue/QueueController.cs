@@ -137,7 +137,7 @@ namespace Readarr.Api.V1.Queue
         public PagingResource<QueueResource> GetQueue([FromQuery] PagingRequestResource paging, bool includeUnknownAuthorItems = false, bool includeAuthor = false, bool includeBook = false)
         {
             var pagingResource = new PagingResource<QueueResource>(paging);
-            var pagingSpec = pagingResource.MapToPagingSpec<QueueResource, NzbDrone.Core.Queue.Queue>("timeleft", SortDirection.Ascending);
+            var pagingSpec = pagingResource.MapToPagingSpec<QueueResource, NzbDrone.Core.Queue.Queue>(null, "timeleft", SortDirection.Ascending);
 
             return pagingSpec.ApplyToPage((spec) => GetQueue(spec, includeUnknownAuthorItems), (q) => MapToResource(q, includeAuthor, includeBook));
         }

@@ -65,7 +65,15 @@ namespace Readarr.Api.V1.History
         public PagingResource<HistoryResource> GetHistory([FromQuery] PagingRequestResource paging, bool includeAuthor, bool includeBook, [FromQuery(Name = "eventType")] int[] eventTypes, int? bookId, string downloadId)
         {
             var pagingResource = new PagingResource<HistoryResource>(paging);
-            var pagingSpec = pagingResource.MapToPagingSpec<HistoryResource, EntityHistory>("date", SortDirection.Descending);
+            var pagingSpec = pagingResource.MapToPagingSpec<HistoryResource, EntityHistory>(
+                new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+                {
+                    "authorMetadata.sortName",
+                    "books.title",
+                    "date"
+                },
+                "date",
+                SortDirection.Descending);
 
             if (eventTypes != null && eventTypes.Any())
             {
