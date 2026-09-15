@@ -9,6 +9,7 @@ namespace Readarr.Http.Frontend.Mappers
 {
     public class IndexHtmlMapper : HtmlMapperBase
     {
+        private readonly IAppFolderInfo _appFolderInfo;
         private readonly IConfigFileProvider _configFileProvider;
 
         public IndexHtmlMapper(IAppFolderInfo appFolderInfo,
@@ -18,13 +19,16 @@ namespace Readarr.Http.Frontend.Mappers
                                Logger logger)
             : base(diskProvider, cacheBreakProviderFactory, logger)
         {
+            _appFolderInfo = appFolderInfo;
             _configFileProvider = configFileProvider;
 
             HtmlPath = Path.Combine(appFolderInfo.StartUpFolder, _configFileProvider.UiFolder, "index.html");
             UrlBase = configFileProvider.UrlBase;
         }
 
-        public override string Map(string resourceUrl)
+        protected override string FolderPath => Path.Combine(_appFolderInfo.StartUpFolder, _configFileProvider.UiFolder);
+
+        protected override string MapPath(string resourceUrl)
         {
             return HtmlPath;
         }
