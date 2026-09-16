@@ -89,6 +89,11 @@ namespace NzbDrone.Core.Test.HealthCheck.Checks
             Mocker.GetMock<ILocalizationService>()
                   .Setup(s => s.GetLocalizedString(It.IsAny<string>()))
                   .Returns("Some Warning Message");
+
+            // Keep the real placeholder shape so a mismatched argument list fails the test.
+            Mocker.GetMock<ILocalizationService>()
+                  .Setup(s => s.GetLocalizedString("RemotePathMappingCheckFolderPermissions"))
+                  .Returns("Readarr can see but not access download directory {1}.  Likely permissions error.");
         }
 
         private void GivenFolderExists(string folder)
@@ -251,6 +256,9 @@ namespace NzbDrone.Core.Test.HealthCheck.Checks
             var importEvent = new TrackImportFailedEvent(null, null, true, _downloadItem);
 
             Subject.Check(importEvent).ShouldBeError(wikiFragment: "docker-bad-remote-path-mapping");
+
+            Mocker.GetMock<ILocalizationService>()
+                  .Verify(s => s.GetLocalizedString("RemotePathMappingCheckDockerFolderMissing"), Times.Once());
         }
 
         [Test]
