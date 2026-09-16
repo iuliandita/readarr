@@ -91,10 +91,20 @@ namespace NzbDrone.Core.MediaFiles
         {
             var fullPath = bookFile.Path;
 
-            if (_diskProvider.FileExists(fullPath))
+            if (fullPath.IsPathValid(PathValidationType.CurrentOs))
             {
-                _logger.Info("Deleting book file: {0}", fullPath);
-                DeleteFile(bookFile, subfolder);
+                if (_diskProvider.FileExists(fullPath))
+                {
+                    _logger.Info("Deleting book file: {0}", fullPath);
+                    DeleteFile(bookFile, subfolder);
+                }
+            }
+            else
+            {
+                // A stored path that fails validation (eg. a component with trailing whitespace)
+                // cannot be used with the disk provider. Skip the file and still remove the db
+                // row so the library can be cleaned up through the API.
+                _logger.Warn("Skipping file deletion, stored path is not a valid path: {0}", fullPath);
             }
 
             // Delete the track file from the database to clean it up even if the file was already deleted

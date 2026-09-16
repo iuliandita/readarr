@@ -3,7 +3,10 @@ using System.IO;
 using System.IO.Abstractions;
 using System.Linq;
 using Microsoft.AspNetCore.Mvc;
+using NzbDrone.Common.Disk;
+using NzbDrone.Common.Extensions;
 using NzbDrone.Core.Books;
+using NzbDrone.Core.Datastore;
 using NzbDrone.Core.Datastore.Events;
 using NzbDrone.Core.DecisionEngine.Specifications;
 using NzbDrone.Core.Exceptions;
@@ -63,7 +66,19 @@ namespace Readarr.Api.V1.BookFiles
         protected override BookFileResource GetResourceById(int id)
         {
             var resource = MapToResource(_mediaFileService.Get(id));
-            resource.AudioTags = _metadataTagService.ReadTags((FileInfoBase)new FileInfo(resource.Path));
+
+            if (resource == null)
+            {
+                throw new ModelNotFoundException(typeof(BookFile), id);
+            }
+
+            // A stored path that fails validation cannot be read from disk, but still return the
+            // resource so the row can be inspected and removed through the API.
+            if (resource.Path.IsPathValid(PathValidationType.CurrentOs))
+            {
+                resource.AudioTags = _metadataTagService.ReadTags((FileInfoBase)new FileInfo(resource.Path));
+            }
+
             return resource;
         }
 

@@ -108,6 +108,18 @@ namespace NzbDrone.Core.Test.MediaFiles.MediaFileDeletionService
         }
 
         [Test]
+        public void should_delete_from_db_if_track_file_path_is_not_valid()
+        {
+            _trackFile.Path = @"/Author #5 /Author Name - Track01.epub".AsOsAgnostic();
+
+            Subject.DeleteTrackFile(_trackFile, "Unmapped_Files");
+
+            Mocker.GetMock<IMediaFileService>().Verify(v => v.Delete(_trackFile, DeleteMediaFileReason.Manual), Times.Once());
+            Mocker.GetMock<IRecycleBinProvider>().Verify(v => v.DeleteFile(It.IsAny<string>(), It.IsAny<string>()), Times.Never());
+            ExceptionVerification.ExpectedWarns(1);
+        }
+
+        [Test]
         public void should_delete_from_disk_and_db_if_track_file_exists()
         {
             GivenNonCalibreRootFolder();

@@ -80,6 +80,25 @@ namespace NzbDrone.Core.Test.MediaFiles
         }
 
         [Test]
+        public void should_not_throw_when_a_stored_path_has_a_whitespace_padded_component()
+        {
+            var malformedPath = @"/data/media/books/Percy Jackson and the Olympians #5 /Book #5 .epub".AsOsAgnostic();
+
+            var trackFiles = Builder<BookFile>.CreateListOfSize(1)
+                .All()
+                .With(x => x.Path = malformedPath)
+                .Build()
+                .ToList();
+
+            GivenTrackFiles(trackFiles);
+
+            Assert.DoesNotThrow(() => Subject.Clean(_author.Path, trackFiles.Select(e => e.Path).ToList()));
+
+            Mocker.GetMock<IMediaFileService>()
+                .Verify(c => c.DeleteMany(It.Is<List<BookFile>>(x => x.Count == 0), DeleteMediaFileReason.MissingFromDisk), Times.Once());
+        }
+
+        [Test]
         public void should_unlink_track_when_trackFile_does_not_exist()
         {
             var trackFiles = Builder<BookFile>.CreateListOfSize(10)
