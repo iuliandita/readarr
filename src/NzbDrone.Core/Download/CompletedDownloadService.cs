@@ -6,6 +6,7 @@ using NLog;
 using NzbDrone.Common.EnvironmentInfo;
 using NzbDrone.Common.Extensions;
 using NzbDrone.Common.Instrumentation.Extensions;
+using NzbDrone.Core.Books;
 using NzbDrone.Core.Download.TrackedDownloads;
 using NzbDrone.Core.History;
 using NzbDrone.Core.MediaFiles;
@@ -29,6 +30,8 @@ namespace NzbDrone.Core.Download
         private readonly IProvideImportItemService _provideImportItemService;
         private readonly IDownloadedBooksImportService _downloadedTracksImportService;
         private readonly ITrackedDownloadAlreadyImported _trackedDownloadAlreadyImported;
+        private readonly IBookService _bookService;
+        private readonly IMediaFileService _mediaFileService;
         private readonly Logger _logger;
 
         public CompletedDownloadService(IEventAggregator eventAggregator,
@@ -36,6 +39,8 @@ namespace NzbDrone.Core.Download
                                         IProvideImportItemService provideImportItemService,
                                         IDownloadedBooksImportService downloadedTracksImportService,
                                         ITrackedDownloadAlreadyImported trackedDownloadAlreadyImported,
+                                        IBookService bookService,
+                                        IMediaFileService mediaFileService,
                                         Logger logger)
         {
             _eventAggregator = eventAggregator;
@@ -43,6 +48,8 @@ namespace NzbDrone.Core.Download
             _provideImportItemService = provideImportItemService;
             _downloadedTracksImportService = downloadedTracksImportService;
             _trackedDownloadAlreadyImported = trackedDownloadAlreadyImported;
+            _bookService = bookService;
+            _mediaFileService = mediaFileService;
             _logger = logger;
         }
 
@@ -171,6 +178,15 @@ namespace NzbDrone.Core.Download
                            .Property("Path", trackedDownload.DownloadItem.OutputPath.ToString())
                            .WriteSentryWarn("DownloadHistoryIncomplete")
                            .Log();
+                }
+
+                // Load the books and their files so the DownloadCompletedEvent handlers see fully
+                // hydrated entities, otherwise a partially imported download can stall the queue.
+                var books = _bookService.GetBooks(trackedDownload.RemoteBook?.Books.Select(b => b.Id) ?? Enumerable.Empty<int>()) ?? Enumerable.Empty<Book>();
+
+                foreach (var book in books)
+                {
+                    _mediaFileService.GetFilesByBook(book.Id);
                 }
 
                 trackedDownload.State = TrackedDownloadState.Imported;
