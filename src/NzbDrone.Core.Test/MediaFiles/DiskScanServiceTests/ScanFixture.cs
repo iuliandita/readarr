@@ -560,5 +560,28 @@ namespace NzbDrone.Core.Test.MediaFiles.DiskScanServiceTests
                                           l[0].MediaInfo.AudioFormat == localTrack.FileTrackInfo.MediaInfo.AudioFormat)),
                         Times.Once());
         }
+
+        [Test]
+        public void should_only_scan_the_specified_author_folders()
+        {
+            GivenRootFolder(_author.Path, _otherAuthorFolder);
+
+            Mocker.GetMock<IRootFolderService>()
+                .Setup(s => s.All())
+                .Returns(new List<RootFolder> { new RootFolder { Path = _rootFolder } });
+
+            Mocker.GetMock<IAuthorService>()
+                .Setup(s => s.GetAuthor(_author.Id))
+                .Returns(_author);
+
+            Mocker.GetMock<IDiskProvider>()
+                .Setup(s => s.GetFileInfos(_author.Path, true))
+                .Returns(new List<IFileInfo>());
+
+            Subject.Scan(authorIds: new List<int> { _author.Id });
+
+            Mocker.GetMock<IDiskProvider>().Verify(v => v.GetFileInfos(_author.Path, true), Times.AtLeastOnce());
+            Mocker.GetMock<IDiskProvider>().Verify(v => v.GetFileInfos(_otherAuthorFolder, true), Times.Never());
+        }
     }
 }
