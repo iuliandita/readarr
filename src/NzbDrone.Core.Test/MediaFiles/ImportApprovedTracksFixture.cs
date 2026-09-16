@@ -154,6 +154,18 @@ namespace NzbDrone.Core.Test.MediaFiles
         }
 
         [Test]
+        public void should_publish_BookImportedEvent_when_book_has_no_monitored_edition()
+        {
+            var decision = _approvedDecisions.First();
+            decision.Item.Edition.Monitored = false;
+
+            Subject.Import(new List<ImportDecision<LocalBook>> { decision }, false);
+
+            Mocker.GetMock<IEventAggregator>()
+                .Verify(v => v.PublishEvent(It.IsAny<BookImportedEvent>()), Times.Once());
+        }
+
+        [Test]
         public void should_not_move_existing_files()
         {
             var track = _approvedDecisions.First();

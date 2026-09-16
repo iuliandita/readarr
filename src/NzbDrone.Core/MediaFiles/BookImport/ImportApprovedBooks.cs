@@ -324,8 +324,18 @@ namespace NzbDrone.Core.MediaFiles.BookImport
             foreach (var bookImport in bookImports)
             {
                 var book = bookImport.First().ImportDecision.Item.Book;
-                var edition = book.Editions.Value.Single(x => x.Monitored);
                 var author = bookImport.First().ImportDecision.Item.Author;
+
+                // A book identified while scanning untracked files can have no monitored edition.
+                // Fall back to the edition that was actually imported so the event still fires.
+                var edition = book.Editions.Value.FirstOrDefault(x => x.Monitored) ??
+                              bookImport.Select(e => e.ImportDecision.Item.Edition).FirstOrDefault(x => x != null);
+
+                if (edition == null)
+                {
+                    _logger.Warn("Unable to publish import event for {0}, no edition was found", book);
+                    continue;
+                }
 
                 if (bookImport.Where(e => e.Errors.Count == 0).ToList().Count > 0 && author != null && book != null)
                 {
