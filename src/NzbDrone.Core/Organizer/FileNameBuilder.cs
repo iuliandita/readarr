@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using NLog;
 using NzbDrone.Common.Cache;
+using NzbDrone.Common.Disk;
 using NzbDrone.Common.EnsureThat;
 using NzbDrone.Common.Extensions;
 using NzbDrone.Core.Books;
@@ -30,7 +31,7 @@ namespace NzbDrone.Core.Organizer
         private readonly INamingConfigService _namingConfigService;
         private readonly IQualityDefinitionService _qualityDefinitionService;
         private readonly ICustomFormatCalculationService _formatCalculator;
-        private readonly ICached<BookFormat[]> _trackFormatCache;
+        private readonly ICached<BookFormat[]> _bookFormatCache;
         private readonly Logger _logger;
 
         private static readonly Regex TitleRegex = new Regex(@"(?<escaped>\{\{|\}\})|\{(?<prefix>[- ._\[(]*)(?<token>(?:[a-z0-9]+)(?:(?<separator>[- ._]+)(?:[a-z0-9]+))?)(?::(?<customFormat>[a-z0-9]+))?(?<suffix>[- ._)\]]*)\}",
@@ -65,11 +66,16 @@ namespace NzbDrone.Core.Organizer
             _namingConfigService = namingConfigService;
             _qualityDefinitionService = qualityDefinitionService;
             _formatCalculator = formatCalculator;
-            _trackFormatCache = cacheManager.GetCache<BookFormat[]>(GetType(), "bookFormat");
+            _bookFormatCache = cacheManager.GetCache<BookFormat[]>(GetType(), "bookFormat");
             _logger = logger;
         }
 
         public string BuildBookFileName(Author author, Edition edition, BookFile bookFile, NamingConfig namingConfig = null, List<CustomFormat> customFormats = null)
+        {
+            return BuildBookFileName(author, edition, bookFile, LongPathSupport.MaxFilePathLength, namingConfig, customFormats);
+        }
+
+        private string BuildBookFileName(Author author, Edition edition, BookFile bookFile, int maxPath, NamingConfig namingConfig = null, List<CustomFormat> customFormats = null)
         {
             if (namingConfig == null)
             {
@@ -88,8 +94,6 @@ namespace NzbDrone.Core.Organizer
 
             var pattern = namingConfig.StandardBookFormat;
 
-            var tokenHandlers = new Dictionary<string, Func<TokenMatch, string>>(FileNameBuilderTokenEqualityComparer.Instance);
-
             var splitPatterns = pattern.Split(new char[] { '\\', '/' }, StringSplitOptions.RemoveEmptyEntries);
             var components = new List<string>();
 
@@ -97,8 +101,12 @@ namespace NzbDrone.Core.Organizer
             {
                 var splitPattern = s;
 
+                var tokenHandlers = new Dictionary<string, Func<TokenMatch, string>>(FileNameBuilderTokenEqualityComparer.Instance);
+
+                /* Replace all tokens excluding the book title */
                 AddAuthorTokens(tokenHandlers, author);
-                AddBookPlaceholderTokens(tokenHandlers);
+                AddBookTokens(tokenHandlers, edition);
+                AddBookTitlePlaceholderTokens(tokenHandlers);
                 AddBookFileTokens(tokenHandlers, bookFile);
                 AddQualityTokens(tokenHandlers, author, bookFile);
                 AddMediaInfoTokens(tokenHandlers, bookFile);
@@ -107,11 +115,17 @@ namespace NzbDrone.Core.Organizer
                 var component = ReplacePartTokens(splitPattern, tokenHandlers, namingConfig).Trim();
                 component = ReplaceTokens(component, tokenHandlers, namingConfig, true).Trim();
 
-                AddBookTokens(tokenHandlers, edition);
+                /* Determine how long the name is and compute the max book title length based on what is left below the max */
+                var maxPathSegmentLength = Math.Min(LongPathSupport.MaxFileNameLength, maxPath);
+                var maxBookTitleLength = maxPathSegmentLength - GetLengthWithoutBookTitle(component, namingConfig);
+
+                /* Add the book title, truncating the length as necessary */
+                AddBookTitleTokens(tokenHandlers, edition, maxBookTitleLength);
                 component = ReplaceTokens(component, tokenHandlers, namingConfig).Trim();
 
                 component = FileNameCleanupRegex.Replace(component, match => match.Captures[0].Value[0].ToString());
                 component = TrimSeparatorsRegex.Replace(component, string.Empty);
+                component = component.Replace("{ellipsis}", "...");
 
                 if (component.IsNotNullOrWhiteSpace())
                 {
@@ -138,16 +152,16 @@ namespace NzbDrone.Core.Organizer
 
         public BasicNamingConfig GetBasicNamingConfig(NamingConfig nameSpec)
         {
-            var trackFormat = GetTrackFormat(nameSpec.StandardBookFormat).LastOrDefault();
+            var bookFormat = GetBookFormat(nameSpec.StandardBookFormat).LastOrDefault();
 
-            if (trackFormat == null)
+            if (bookFormat == null)
             {
                 return new BasicNamingConfig();
             }
 
             var basicNamingConfig = new BasicNamingConfig
             {
-                Separator = trackFormat.Separator
+                Separator = bookFormat.Separator
             };
 
             var titleTokens = TitleRegex.Matches(nameSpec.StandardBookFormat);
@@ -252,36 +266,22 @@ namespace NzbDrone.Core.Organizer
             }
         }
 
-        private void AddBookPlaceholderTokens(Dictionary<string, Func<TokenMatch, string>> tokenHandlers)
+        private void AddBookTitlePlaceholderTokens(Dictionary<string, Func<TokenMatch, string>> tokenHandlers)
         {
             tokenHandlers["{Book Title}"] = m => null;
             tokenHandlers["{Book CleanTitle}"] = m => null;
             tokenHandlers["{Book TitleThe}"] = m => null;
+        }
 
-            tokenHandlers["{Book TitleNoSub}"] = m => null;
-            tokenHandlers["{Book CleanTitleNoSub}"] = m => null;
-            tokenHandlers["{Book TitleTheNoSub}"] = m => null;
-
-            tokenHandlers["{Book Subtitle}"] = m => null;
-            tokenHandlers["{Book CleanSubtitle}"] = m => null;
-            tokenHandlers["{Book SubtitleThe}"] = m => null;
-
-            tokenHandlers["{Book Series}"] = m => null;
-            tokenHandlers["{Book SeriesPosition}"] = m => null;
-            tokenHandlers["{Book SeriesTitle}"] = m => null;
-
-            tokenHandlers["{Book Disambiguation}"] = m => null;
-            tokenHandlers["{Release Year}"] = m => null;
-            tokenHandlers["{Edition Year}"] = m => null;
-            tokenHandlers["{Release YearFirst}"] = m => null;
+        private void AddBookTitleTokens(Dictionary<string, Func<TokenMatch, string>> tokenHandlers, Edition edition, int maxLength)
+        {
+            tokenHandlers["{Book Title}"] = m => GetBookTitle(edition.Title, maxLength);
+            tokenHandlers["{Book CleanTitle}"] = m => GetBookTitle(CleanTitle(edition.Title), maxLength);
+            tokenHandlers["{Book TitleThe}"] = m => GetBookTitle(TitleThe(edition.Title), maxLength);
         }
 
         private void AddBookTokens(Dictionary<string, Func<TokenMatch, string>> tokenHandlers, Edition edition)
         {
-            tokenHandlers["{Book Title}"] = m => edition.Title;
-            tokenHandlers["{Book CleanTitle}"] = m => CleanTitle(edition.Title);
-            tokenHandlers["{Book TitleThe}"] = m => TitleThe(edition.Title);
-
             var (titleNoSub, subtitle) = edition.Title.SplitBookTitle(edition.Book.Value.AuthorMetadata.Value.Name);
 
             tokenHandlers["{Book TitleNoSub}"] = m => titleNoSub;
@@ -516,15 +516,40 @@ namespace NzbDrone.Core.Organizer
             return $"{prefix}{tokenText1}{separator}{tokenText2}{suffix}";
         }
 
-        private BookFormat[] GetTrackFormat(string pattern)
+        private BookFormat[] GetBookFormat(string pattern)
         {
-            return _trackFormatCache.Get(pattern, () => SeasonEpisodePatternRegex.Matches(pattern).OfType<Match>()
+            return _bookFormatCache.Get(pattern, () => SeasonEpisodePatternRegex.Matches(pattern).OfType<Match>()
                 .Select(match => new BookFormat
                 {
                     BookSeparator = match.Groups["episodeSeparator"].Value,
                     Separator = match.Groups["separator"].Value,
                     BookPattern = match.Groups["episode"].Value,
                 }).ToArray());
+        }
+
+        private string GetBookTitle(string title, int maxLength)
+        {
+            if (title.GetByteCount() <= maxLength)
+            {
+                return title;
+            }
+
+            if (maxLength <= 3)
+            {
+                return "{ellipsis}";
+            }
+
+            return $"{title.Truncate(maxLength - 3).TrimEnd(' ', '.')}{{ellipsis}}";
+        }
+
+        private int GetLengthWithoutBookTitle(string pattern, NamingConfig namingConfig)
+        {
+            var tokenHandlers = new Dictionary<string, Func<TokenMatch, string>>(FileNameBuilderTokenEqualityComparer.Instance);
+            tokenHandlers["{Book Title}"] = m => string.Empty;
+            tokenHandlers["{Book CleanTitle}"] = m => string.Empty;
+            tokenHandlers["{Book TitleThe}"] = m => string.Empty;
+            var result = ReplaceTokens(pattern, tokenHandlers, namingConfig);
+            return result.GetByteCount();
         }
 
         private string GetQualityProper(QualityModel quality)
