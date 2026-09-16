@@ -39,3 +39,8 @@ if (!('contains' in String.prototype)) {
     return String.prototype.indexOf.call(this, str, startIndex) !== -1;
   };
 }
+
+// For Firefox ESR 115 support
+if (!Object.groupBy) {
+  import('core-js/actual/object/group-by');
+}
