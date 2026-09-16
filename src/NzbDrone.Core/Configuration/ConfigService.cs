@@ -280,6 +280,15 @@ namespace NzbDrone.Core.Configuration
             set { SetValue("MetadataSource", value); }
         }
 
+        public string MetadataSourceSecondary
+        {
+            // Optional second rreading-glasses-compatible endpoint used when the primary
+            // fails. Empty disables failover.
+            get { return GetValue("MetadataSourceSecondary", string.Empty); }
+
+            set { SetValue("MetadataSourceSecondary", value); }
+        }
+
         public WriteAudioTagsType WriteAudioTags
         {
             get { return GetValueEnum("WriteAudioTags", WriteAudioTagsType.No); }

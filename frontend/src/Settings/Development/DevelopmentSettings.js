@@ -75,6 +75,20 @@ class DevelopmentSettings extends Component {
                       {...settings.metadataSource}
                     />
                   </FormGroup>
+
+                  <FormGroup>
+                    <FormLabel>
+                      {translate('MetadataSourceSecondary')}
+                    </FormLabel>
+
+                    <FormInputGroup
+                      type={inputTypes.TEXT}
+                      name="metadataSourceSecondary"
+                      helpText={translate('MetadataSourceSecondaryHelpText')}
+                      onChange={onInputChange}
+                      {...settings.metadataSourceSecondary}
+                    />
+                  </FormGroup>
                 </FieldSet>
 
                 <FieldSet legend={translate('Logging')}>

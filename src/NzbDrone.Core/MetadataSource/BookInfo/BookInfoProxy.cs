@@ -71,14 +71,19 @@ namespace NzbDrone.Core.MetadataSource.BookInfo
 
         public HashSet<string> GetChangedAuthors(DateTime startTime)
         {
-            var httpRequest = _requestBuilder.GetRequestBuilder().Create()
-                .SetSegment("route", "author/changed")
-                .AddQueryParam("since", startTime.ToString("o"))
-                .Build();
+            var httpResponse = _requestBuilder.Execute(
+                b =>
+                {
+                    var request = b.Create()
+                        .SetSegment("route", "author/changed")
+                        .AddQueryParam("since", startTime.ToString("o"))
+                        .Build();
 
-            httpRequest.SuppressHttpError = true;
+                    request.SuppressHttpError = true;
 
-            var httpResponse = _httpClient.Get<RecentUpdatesResource>(httpRequest);
+                    return request;
+                },
+                r => _httpClient.Get<RecentUpdatesResource>(r));
 
             if (httpResponse.Resource == null || httpResponse.Resource.Limited)
             {
@@ -384,19 +389,22 @@ namespace NzbDrone.Core.MetadataSource.BookInfo
 
         private Book GetEditionInfo(int id, bool getAllEditions)
         {
-            HttpRequest httpRequest;
             HttpResponse httpResponse;
 
             while (true)
             {
-                httpRequest = _requestBuilder.GetRequestBuilder().Create()
-                    .SetSegment("route", $"book/{id}")
-                    .Build();
+                httpResponse = _requestBuilder.Execute(
+                    b =>
+                    {
+                        var request = b.Create()
+                            .SetSegment("route", $"book/{id}")
+                            .Build();
 
-                httpRequest.SuppressHttpError = true;
+                        request.SuppressHttpError = true;
 
-                // we expect a redirect
-                httpResponse = _httpClient.Get(httpRequest);
+                        return request;
+                    },
+                    r => _httpClient.Get(r));
 
                 if (httpResponse.StatusCode == HttpStatusCode.TooManyRequests)
                 {
@@ -415,7 +423,7 @@ namespace NzbDrone.Core.MetadataSource.BookInfo
 
             if (!httpResponse.HasHttpRedirect)
             {
-                throw new BookInfoException($"Unexpected response from {httpRequest.Url}");
+                throw new BookInfoException($"Unexpected response from {httpResponse.Request.Url}");
             }
 
             var location = httpResponse.Headers.GetSingleValue("Location");
@@ -479,18 +487,23 @@ namespace NzbDrone.Core.MetadataSource.BookInfo
 
             while (true)
             {
-                var httpRequest = _requestBuilder.GetRequestBuilder().Create()
-                    .SetSegment("route", "book/bulk")
-                    .SetHeader("Content-Type", "application/json")
-                    .Build();
+                httpResponse = _requestBuilder.Execute(
+                    b =>
+                    {
+                        var request = b.Create()
+                            .SetSegment("route", "book/bulk")
+                            .SetHeader("Content-Type", "application/json")
+                            .Build();
 
-                httpRequest.SetContent(ids.ToJson());
-                httpRequest.ContentSummary = ids.ToJson(Formatting.None);
+                        request.SetContent(ids.ToJson());
+                        request.ContentSummary = ids.ToJson(Formatting.None);
 
-                httpRequest.AllowAutoRedirect = true;
-                httpRequest.SuppressHttpErrorStatusCodes = new[] { HttpStatusCode.TooManyRequests };
+                        request.AllowAutoRedirect = true;
+                        request.SuppressHttpErrorStatusCodes = new[] { HttpStatusCode.TooManyRequests };
 
-                httpResponse = _httpClient.Post<BulkBookResource>(httpRequest);
+                        return request;
+                    },
+                    r => _httpClient.Post<BulkBookResource>(r));
 
                 if (httpResponse.StatusCode == HttpStatusCode.TooManyRequests)
                 {
@@ -608,14 +621,19 @@ namespace NzbDrone.Core.MetadataSource.BookInfo
 
             for (var i = 0; i < 60; i++)
             {
-                var httpRequest = _requestBuilder.GetRequestBuilder().Create()
-                    .SetSegment("route", $"author/{foreignAuthorId}")
-                    .Build();
+                var httpResponse = _requestBuilder.Execute(
+                    b =>
+                    {
+                        var request = b.Create()
+                            .SetSegment("route", $"author/{foreignAuthorId}")
+                            .Build();
 
-                httpRequest.AllowAutoRedirect = true;
-                httpRequest.SuppressHttpError = true;
+                        request.AllowAutoRedirect = true;
+                        request.SuppressHttpError = true;
 
-                var httpResponse = _cachedHttpClient.Get(httpRequest, useCache, TimeSpan.FromMinutes(30));
+                        return request;
+                    },
+                    r => _cachedHttpClient.Get(r, useCache, TimeSpan.FromMinutes(30)));
 
                 if (httpResponse.HasHttpError)
                 {
@@ -665,14 +683,19 @@ namespace NzbDrone.Core.MetadataSource.BookInfo
 
             for (var i = 0; i < 60; i++)
             {
-                var httpRequest = _requestBuilder.GetRequestBuilder().Create()
-                    .SetSegment("route", $"work/{foreignBookId}")
-                    .Build();
-
-                httpRequest.SuppressHttpError = true;
-
                 // this may redirect to an author
-                var httpResponse = _httpClient.Get(httpRequest);
+                var httpResponse = _requestBuilder.Execute(
+                    b =>
+                    {
+                        var request = b.Create()
+                            .SetSegment("route", $"work/{foreignBookId}")
+                            .Build();
+
+                        request.SuppressHttpError = true;
+
+                        return request;
+                    },
+                    r => _httpClient.Get(r));
 
                 if (httpResponse.StatusCode == HttpStatusCode.TooManyRequests)
                 {
