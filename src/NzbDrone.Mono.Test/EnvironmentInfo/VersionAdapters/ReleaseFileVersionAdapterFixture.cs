@@ -27,7 +27,7 @@ namespace NzbDrone.Mono.Test.EnvironmentInfo.VersionAdapters
             var info = Subject.Read();
             info.FullName.Should().NotBeNullOrWhiteSpace();
             info.Name.Should().NotBeNullOrWhiteSpace();
-            info.Version.Should().NotBeNullOrWhiteSpace();
+            info.Version.Should().NotBeNull();
         }
 
         [Test]
@@ -80,6 +80,24 @@ namespace NzbDrone.Mono.Test.EnvironmentInfo.VersionAdapters
             version.Name.Should().Be("ubuntu");
             version.Version.Should().Be("14.04");
             version.FullName.Should().Be("Ubuntu 14.04.5 LTS");
+        }
+
+        [Test]
+        public void should_detect_versionless_os_release()
+        {
+            Mocker.GetMock<IDiskProvider>().Setup(c => c.FolderExists("/etc/")).Returns(true);
+            Mocker.GetMock<IDiskProvider>()
+                .Setup(c => c.GetFiles(It.IsAny<string>(), false)).Returns(new[] { "/etc/os-release" });
+            Mocker.GetMock<IDiskProvider>()
+                .Setup(c => c.ReadAllText("/etc/os-release"))
+                .Returns("ID=arch\nPRETTY_NAME=\"Arch Linux\"\n");
+
+            var version = Subject.Read();
+
+            version.Should().NotBeNull();
+            version.Name.Should().Be("arch");
+            version.Version.Should().BeEmpty();
+            version.FullName.Should().Be("Arch Linux");
         }
     }
 }
