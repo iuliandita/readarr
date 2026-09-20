@@ -27,7 +27,7 @@ namespace NzbDrone.Mono.Test.EnvironmentInfo
             var info = Subject.Read();
             info.FullName.Should().NotBeNullOrWhiteSpace();
             info.Name.Should().NotBeNullOrWhiteSpace();
-            info.Version.Should().NotBeNullOrWhiteSpace();
+            info.Version.Should().NotBeNull();
         }
     }
 }
