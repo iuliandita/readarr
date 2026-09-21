@@ -166,6 +166,50 @@ namespace NzbDrone.Core.Test.MediaFiles
         }
 
         [Test]
+        public void should_import_when_book_already_exists_and_edition_is_not_prepopulated()
+        {
+            // Regression: an already-existing book (Id != 0) skips the block that populates
+            // Item.Edition, so a manual import must resolve it from the foreign edition id
+            // instead of dereferencing a null edition.
+            var decision = _approvedDecisions.First();
+            decision.Item.Book.Id = 42;
+            decision.Item.Edition.Id = 0;
+
+            Mocker.GetMock<IBookService>()
+                  .Setup(s => s.FindById(It.IsAny<string>()))
+                  .Returns(decision.Item.Book);
+
+            Mocker.GetMock<IEditionService>()
+                  .Setup(s => s.GetEditionByForeignEditionId(decision.Item.Edition.ForeignEditionId))
+                  .Returns(decision.Item.Edition);
+
+            var result = Subject.Import(new List<ImportDecision<LocalBook>> { decision }, false);
+
+            result.Should().HaveCount(1);
+            result.Single().Result.Should().Be(ImportResultType.Imported);
+            decision.Item.Edition.Should().NotBeNull();
+        }
+
+        [Test]
+        public void should_reject_import_when_no_edition_can_be_resolved()
+        {
+            // Regression: a null edition used to throw NullReferenceException and abort the
+            // entire manual import.
+            var decision = _approvedDecisions.First();
+            decision.Item.Book.Id = 42;
+            decision.Item.Edition = null;
+
+            Mocker.GetMock<IBookService>()
+                  .Setup(s => s.FindById(It.IsAny<string>()))
+                  .Returns(decision.Item.Book);
+
+            var result = Subject.Import(new List<ImportDecision<LocalBook>> { decision }, false);
+
+            ExceptionVerification.ExpectedWarns(1);
+            result.Single().Result.Should().Be(ImportResultType.Rejected);
+        }
+
+        [Test]
         public void should_not_move_existing_files()
         {
             var track = _approvedDecisions.First();
