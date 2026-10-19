@@ -186,6 +186,26 @@ namespace NzbDrone.Core.Test.MediaFiles.BookImport
             _bookpass3.Verify(c => c.IsSatisfiedBy(It.IsAny<LocalEdition>(), It.IsAny<DownloadClientItem>()), Times.Once());
         }
 
+        [TestCase(true, true, true)]
+        [TestCase(false, true, false)]
+        [TestCase(true, false, false)]
+        public void should_trust_the_book_override_only_when_asked_and_the_identified_book_matches(bool trust, bool sameBook, bool expected)
+        {
+            LocalEdition seen = null;
+            _bookpass1.Setup(c => c.IsSatisfiedBy(It.IsAny<LocalEdition>(), It.IsAny<DownloadClientItem>()))
+                      .Callback<LocalEdition, DownloadClientItem>((edition, _) => seen = edition)
+                      .Returns(Decision.Accept());
+
+            GivenAugmentationSuccess();
+
+            _idOverrides.Book = new Book { Id = sameBook ? _book.Id : _book.Id + 1 };
+            _idConfig.TrustBookOverride = trust;
+
+            Subject.GetImportDecisions(_fileInfos, _idOverrides, new ImportDecisionMakerInfo(), _idConfig);
+
+            seen.BookOverrideTrusted.Should().Be(expected);
+        }
+
         [Test]
         public void should_call_all_track_specifications_if_book_accepted()
         {
