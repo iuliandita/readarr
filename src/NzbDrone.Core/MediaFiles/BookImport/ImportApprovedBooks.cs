@@ -493,6 +493,26 @@ namespace NzbDrone.Core.MediaFiles.BookImport
 
                 book = dbBook;
             }
+            else
+            {
+                // The book already exists, so the block above is skipped and the decision's
+                // Edition is left null. Populate it here, otherwise EnsureEditionAdded (and the
+                // BookFile assignment that follows) dereferences a null edition.
+                foreach (var decision in decisions)
+                {
+                    if (decision.Item.Edition != null)
+                    {
+                        continue;
+                    }
+
+                    var foreignEditionId = decisions.First().Item.Edition?.ForeignEditionId;
+                    var dbEdition = foreignEditionId.IsNullOrWhiteSpace()
+                        ? null
+                        : _editionService.GetEditionByForeignEditionId(foreignEditionId);
+
+                    decision.Item.Edition = dbEdition;
+                }
+            }
 
             return book;
         }
@@ -501,6 +521,17 @@ namespace NzbDrone.Core.MediaFiles.BookImport
         {
             var book = decisions.First().Item.Book;
             var edition = decisions.First().Item.Edition;
+
+            if (edition == null)
+            {
+                // No edition could be resolved for this book. Reject rather than dereferencing
+                // a null edition below (previously surfaced as a NullReferenceException and
+                // aborted the whole manual import).
+                _logger.Warn("No edition could be resolved for {0}, rejecting import", book);
+                RejectBook(decisions);
+
+                return null;
+            }
 
             if (edition.Id == 0)
             {
