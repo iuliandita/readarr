@@ -63,6 +63,7 @@
     <PackageVersion Include="System.Reflection.TypeExtensions" Version="4.7.0" />
     <PackageVersion Include="System.Resources.Extensions" Version="6.0.0" />
     <PackageVersion Include="System.Runtime.Loader" Version="4.3.0" />
+    <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="10.0.13" />
     <PackageVersion Include="System.Security.Principal.Windows" Version="5.0.0" />
     <PackageVersion Include="System.ServiceProcess.ServiceController" Version="10.0.7" />
     <PackageVersion Include="System.Text.Encoding.CodePages" Version="8.0.0" />

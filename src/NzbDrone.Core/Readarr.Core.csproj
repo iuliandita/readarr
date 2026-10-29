@@ -28,6 +28,7 @@
     <PackageReference Include="Equ" />
     <PackageReference Include="MonoTorrent" />
     <PackageReference Include="PdfSharpCore" />
+    <PackageReference Include="System.Security.Cryptography.Pkcs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\NzbDrone.Common\Readarr.Common.csproj" />
