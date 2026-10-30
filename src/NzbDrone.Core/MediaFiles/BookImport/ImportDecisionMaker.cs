@@ -42,6 +42,7 @@ namespace NzbDrone.Core.MediaFiles.BookImport
         public bool IncludeExisting { get; set; }
         public bool AddNewAuthors { get; set; }
         public bool KeepAllEditions { get; set; }
+        public bool TrustBookOverride { get; set; }
     }
 
     public class ImportDecisionMaker : IMakeImportDecision
@@ -162,6 +163,9 @@ namespace NzbDrone.Core.MediaFiles.BookImport
                 // in case it's a new author
                 EnsureData(release);
                 release.NewDownload = config.NewDownload;
+                release.BookOverrideTrusted = config.TrustBookOverride &&
+                                              idOverrides.Book != null &&
+                                              release.Edition?.Book.Value.Id == idOverrides.Book.Id;
 
                 var releaseDecision = GetDecision(release, itemInfo.DownloadClientItem);
 

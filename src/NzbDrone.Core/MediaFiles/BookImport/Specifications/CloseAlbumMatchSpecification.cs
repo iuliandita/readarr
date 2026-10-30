@@ -21,6 +21,13 @@ namespace NzbDrone.Core.MediaFiles.BookImport.Specifications
             double dist;
             string reasons;
 
+            // the grab already named this book, so tag and ID gaps in the files do not decide it
+            if (item.BookOverrideTrusted)
+            {
+                _logger.Debug($"Accepting release {item}: matches the grabbed book");
+                return Decision.Accept();
+            }
+
             // strict when a new download
             if (item.NewDownload)
             {

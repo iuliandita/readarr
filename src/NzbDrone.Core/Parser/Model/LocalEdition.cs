@@ -33,6 +33,7 @@ namespace NzbDrone.Core.Parser.Model
         public Edition Edition { get; set; }
         public List<LocalBook> ExistingTracks { get; set; }
         public bool NewDownload { get; set; }
+        public bool BookOverrideTrusted { get; set; }
 
         public void PopulateMatch(bool keepAllEditions)
         {
