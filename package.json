@@ -148,6 +148,6 @@
   },
   "resolutions": {
     "@babel/runtime": "7.29.2",
-    "immutable": "4.3.8"
+    "immutable": "4.3.9"
   }
 }
